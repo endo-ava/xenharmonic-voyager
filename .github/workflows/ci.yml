@@ -1,201 +1,116 @@
-# name: CI
+name: CI
 
-# on:
-#   push:
-#     branches: [main]
-#   pull_request:
-#     branches: [main]
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
 
-# concurrency:
-#   group: ${{ github.workflow }}-${{ github.ref }}
-#   cancel-in-progress: true
+jobs:
+  lint:
+    name: Lint & Format Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-# env:
-#   CI: true
-#   NODE_OPTIONS: --max-old-space-size=4096
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
 
-# jobs:
-#   lint-and-format:
-#     name: Lint and Format Check
-#     runs-on: ubuntu-latest
+      - name: Set up Python
+        run: uv python install 3.13
 
-#     steps:
-#       - name: Checkout code
-#         uses: actions/checkout@v4
+      - name: Install dependencies
+        run: uv sync
 
-#       - name: Setup Node.js
-#         uses: actions/setup-node@v4
-#         with:
-#           node-version: '20'
-#           cache: 'npm'
+      - name: Run Ruff linter
+        run: uv run ruff check .
 
-#       - name: Install dependencies
-#         run: npm ci
+      - name: Run Ruff formatter check
+        run: uv run ruff format --check .
 
-#       - name: Run ESLint
-#         run: npm run lint
+  test:
+    name: Test (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.13"]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-#       - name: Check Prettier formatting
-#         run: npm run format:check
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
 
-#   type-check:
-#     name: TypeScript Type Check
-#     runs-on: ubuntu-latest
+      - name: Set up Python ${{ matrix.python-version }}
+        run: uv python install ${{ matrix.python-version }}
 
-#     steps:
-#       - name: Checkout code
-#         uses: actions/checkout@v4
+      - name: Install dependencies
+        run: uv sync
 
-#       - name: Setup Node.js
-#         uses: actions/setup-node@v4
-#         with:
-#           node-version: '20'
-#           cache: 'npm'
+      - name: Run tests with coverage
+        run: uv run pytest --cov=src --cov-report=xml --cov-report=term
 
-#       - name: Install dependencies
-#         run: npm ci
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        if: matrix.python-version == '3.13'
+        with:
+          file: ./coverage.xml
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
 
-#       - name: Run TypeScript type check
-#         run: npx tsc --noEmit
+  type-check:
+    name: Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-#   security-audit:
-#     name: Security Audit
-#     runs-on: ubuntu-latest
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
 
-#     steps:
-#       - name: Checkout code
-#         uses: actions/checkout@v4
+      - name: Set up Python
+        run: uv python install 3.13
 
-#       - name: Setup Node.js
-#         uses: actions/setup-node@v4
-#         with:
-#           node-version: '20'
-#           cache: 'npm'
+      - name: Install dependencies
+        run: uv sync
 
-#       - name: Install dependencies
-#         run: npm ci
+      - name: Install mypy
+        run: uv add --dev mypy
 
-#       - name: Run security audit
-#         run: npm audit --audit-level=moderate
+      - name: Run mypy type checker
+        run: uv run mypy src --strict --ignore-missing-imports
 
-#   build:
-#     name: Build Application
-#     runs-on: ubuntu-latest
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-#     steps:
-#       - name: Checkout code
-#         uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
 
-#       - name: Setup Node.js
-#         uses: actions/setup-node@v4
-#         with:
-#           node-version: '20'
-#           cache: 'npm'
+      - name: Set up Python
+        run: uv python install 3.13
 
-#       - name: Install dependencies
-#         run: npm ci
+      - name: Install dependencies
+        run: uv sync
 
-#       - name: Cache Next.js build
-#         uses: actions/cache@v3
-#         with:
-#           path: |
-#             ~/.npm
-#             ${{ github.workspace }}/.next/cache
-#           key: ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**/*.[jt]s', '**/*.[jt]sx') }}
-#           restore-keys: |
-#             ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-
+      - name: Run safety check
+        run: |
+          uv add --dev safety
+          uv run safety check --json || true
 
-#       - name: Build application
-#         run: npm run build
-
-#   test-unit:
-#     name: Unit Tests (Vitest)
-#     runs-on: ubuntu-latest
-
-#     steps:
-#       - name: Checkout code
-#         uses: actions/checkout@v4
-
-#       - name: Setup Node.js
-#         uses: actions/setup-node@v4
-#         with:
-#           node-version: '20'
-#           cache: 'npm'
-
-#       - name: Install dependencies
-#         run: npm ci
-
-#       - name: Run unit tests
-#         run: npm run test:run
-
-#       - name: Generate coverage report
-#         run: npm run test:coverage
-
-#       - name: Upload coverage to artifact
-#         uses: actions/upload-artifact@v4
-#         if: always()
-#         with:
-#           name: coverage-report
-#           path: coverage/
-#           retention-days: 30
-
-#       - name: Upload test results
-#         uses: actions/upload-artifact@v4
-#         if: always()
-#         with:
-#           name: unit-test-results
-#           path: test-results.xml
-#           retention-days: 30
-
-#   test-storybook:
-#     name: Component Tests (Storybook)
-#     runs-on: ubuntu-latest
-#     timeout-minutes: 10
-
-#     steps:
-#       - name: Checkout code
-#         uses: actions/checkout@v4
-
-#       - name: Setup Node.js
-#         uses: actions/setup-node@v4
-#         with:
-#           node-version: '20'
-#           cache: 'npm'
-
-#       - name: Install dependencies
-#         run: npm ci
-
-#       - name: Cache Playwright browsers
-#         uses: actions/cache@v3
-#         id: playwright-cache
-#         with:
-#           path: ~/.cache/ms-playwright
-#           key: ${{ runner.os }}-playwright-${{ hashFiles('**/package-lock.json') }}
-#           restore-keys: |
-#             ${{ runner.os }}-playwright-
-
-#       - name: Install Playwright browsers and dependencies
-#         if: steps.playwright-cache.outputs.cache-hit != 'true'
-#         run: npx playwright install --with-deps
-
-#       - name: Build Storybook
-#         run: npm run build-storybook
-
-#       - name: Serve Storybook and run tests
-#         run: npm run test:storybook:ci
-
-#       - name: Upload Storybook build
-#         uses: actions/upload-artifact@v4
-#         if: always()
-#         with:
-#           name: storybook-static
-#           path: storybook-static/
-#           retention-days: 30
-
-#       - name: Upload Storybook test results
-#         uses: actions/upload-artifact@v4
-#         if: failure()
-#         with:
-#           name: storybook-test-results
-#           path: test-results/
-#           retention-days: 30
+      - name: Run bandit security linter
+        run: |
+          uv add --dev bandit
+          uv run bandit -r src -f json || true

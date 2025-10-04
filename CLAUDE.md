@@ -1,12 +1,57 @@
 # プロジェクト概要
 
+**Xenharmonic Voyager** は、12平均律以外の音響宇宙（Xenharmonic）を探求するための実験的なWebアプリケーションです。ユーザーが指定したN-EDO (N Equal Divisions of the Octave, N平均律) の音律と和音に対し、その響きの「協和度」を音響心理学モデル（Setharesモデル）に基づいてリアルタイムに計算し、可視化します。
+
+感性や慣習に頼るのではなく、倍音の物理的な干渉（ラフネス）という観点から、響きの美しさを定量的に探求するための「観測装置」として機能します。
+
 # 技術スタック
 
+## アプリケーション本体
+
+- **Python 3.13+**: アプリケーション全体の記述言語
+- **Streamlit**: インタラクティブなUIの構築およびWebサーバー機能
+- **NumPy**: 周波数計算、倍音列生成など、高速な配列演算
+- **Pydantic**: 計算ロジックへの入力値の検証による堅牢性向上
+
+## 開発・品質管理
+
+- **uv**: Python依存管理・仮想環境・バージョン管理の統合ツール
+- **Ruff**: 超高速な静的コード解析とコードフォーマット
+- **pre-commit**: コミット前のLint/Format自動実行によるコード品質の強制
+- **Pytest**: 計算ロジックの正しさを保証するための単体テスト
+- **Git / GitHub**: バージョン管理とCI/CD
+
+## デプロイ
+
+- **Streamlit Community Cloud**: アプリケーションのホスティング
 
 # 主要な開発コマンド
 
 ```bash
+# 依存関係のインストール（開発依存含む）
+uv sync
 
+# Streamlitアプリケーションの起動（開発サーバー）
+uv run streamlit run app.py
+
+# Lintとフォーマットのチェック
+uv run ruff check .
+uv run ruff format --check .
+
+# 自動フォーマット適用
+uv run ruff format .
+
+# テストの実行
+uv run pytest
+
+# カバレッジ付きテスト実行
+uv run pytest --cov=src --cov-report=html
+
+# pre-commitフックのインストール
+uv run pre-commit install
+
+# pre-commitフックの手動実行
+uv run pre-commit run --all-files
 ```
 
 # ドキュメント体系

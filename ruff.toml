@@ -1,0 +1,57 @@
+# Ruff configuration for Xenharmonic Voyager
+# See https://docs.astral.sh/ruff/configuration/
+
+# Target Python 3.13+
+target-version = "py313"
+
+# Line length
+line-length = 88
+
+[lint]
+# Enable recommended rules
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # Pyflakes
+    "I",   # isort
+    "N",   # pep8-naming
+    "UP",  # pyupgrade
+    "ANN", # flake8-annotations
+    "B",   # flake8-bugbear
+    "A",   # flake8-builtins
+    "C4",  # flake8-comprehensions
+    "DTZ", # flake8-datetimez
+    "T10", # flake8-debugger
+    "EM",  # flake8-errmsg
+    "ISC", # flake8-implicit-str-concat
+    "ICN", # flake8-import-conventions
+    "PT",  # flake8-pytest-style
+    "Q",   # flake8-quotes
+    "RET", # flake8-return
+    "SIM", # flake8-simplify
+    "TID", # flake8-tidy-imports
+    "ARG", # flake8-unused-arguments
+    "PTH", # flake8-use-pathlib
+    "PL",  # Pylint
+    "RUF", # Ruff-specific rules
+]
+
+# Ignore specific rules
+ignore = [
+    "ANN101", # Missing type annotation for self
+    "ANN102", # Missing type annotation for cls
+    "ANN401", # Dynamically typed expressions (Any) are allowed
+]
+
+[lint.per-file-ignores]
+"tests/**/*.py" = [
+    "ANN",  # No type annotations required in tests
+    "PLR2004", # Magic values allowed in tests
+]
+
+[format]
+# Use double quotes for strings
+quote-style = "double"
+
+# Use spaces instead of tabs
+indent-style = "space"
