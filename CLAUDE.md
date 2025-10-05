@@ -85,25 +85,14 @@ uv run pre-commit run --all-files
 
 ## ドキュメントインデックス（一覧）
 
-| カテゴリ             | ファイル             | 相対パス                                                                                                                                                               |
-| -------------------- | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| プロジェクト基本情報 | 要件定義             | [`docs/00.project/0001.requirements.md`](docs/00.project/0001.requirements.md)                                                                                         |
-| プロジェクト基本情報 | 画面設計             | [`docs/00.project/0002.screenDesign.md`](docs/00.project/0002.screenDesign.md)                                                                                         |
-| プロジェクト基本情報 | Hub画面設計          | [`docs/00.project/screenDesigns/0003.hub.md`](docs/00.project/screenDesigns/0003.hub.md)                                                                               |
-| プロジェクト基本情報 | Library画面設計      | [`docs/00.project/screenDesigns/0004.library.md`](docs/00.project/screenDesigns/0004.library.md)                                                                       |
-| プロジェクト基本情報 | Tutorial画面設計     | [`docs/00.project/screenDesigns/0005.tutorial.md`](docs/00.project/screenDesigns/0005.tutorial.md)                                                                     |
-| ドメイン設計         | ドメインシステム     | [`docs/10.domain/1001.domainSystem.md`](docs/10.domain/1001.domainSystem.md)                                                                                           |
-| ドメイン設計         | 音楽理論ガイドブック | [`docs/10.domain/1002.music-theory-guidebook.md`](docs/10.domain/1002.music-theory-guidebook.md)                                                                       |
-| 開発ガイドライン     | 基本コーディング     | [`docs/20.development/2001.basic-coding.md`](docs/20.development/2001.basic-coding.md)                                                                                 |
-| 開発ガイドライン     | 開発原則・思想       | [`docs/20.development/2002.development-principles.md`](docs/20.development/2002.development-principles.md)                                                             |
-| 開発ガイドライン     | フロントエンド設計   | [`docs/20.development/2003.frontend-design.md`](docs/20.development/2003.frontend-design.md)                                                                           |
-| 開発ガイドライン     | アーキテクチャ       | [`docs/20.development/2004.architecture.md`](docs/20.development/2004.architecture.md)                                                                                 |
-| 品質・プロセス       | テスト               | [`docs/30.quality/3001.testing.md`](docs/30.quality/3001.testing.md)                                                                                                   |
-| 品質・プロセス       | Git・PR              | [`docs/30.quality/3002.git-pr.md`](docs/30.quality/3002.git-pr.md)                                                                                                     |
-| 品質・プロセス       | MCPツール活用        | [`docs/30.quality/3003.mcp-tools-usage.md`](docs/30.quality/3003.mcp-tools-usage.md)                                                                                   |
-| ナレッジ             | ナレッジ             | [`docs/70.knowledge/`](docs/70.knowledge/)                                                                                                                             |
-| 日誌                 | 日誌                 | [`docs/80.dailyReport/`](docs/80.dailyReport/)                                                                                                                         |
-| テンプレート         | テンプレート         | [`docs/99.templates/`](docs/99.templates/), [`.github/PULL_REQUEST_TEMPLATE.md`](.github/PULL_REQUEST_TEMPLATE.md), [`.github/ISSUE_TEMPLATE`](.github/ISSUE_TEMPLATE) |
+| カテゴリ             | ファイル                           | 相対パス                                                                                             |
+| -------------------- | ---------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| プロジェクト基本情報 | 要件定義                           | [`docs/00.project/0001.requirements.md`](docs/00.project/0001.requirements.md)                        |
+| プロジェクト基本情報 | アーキテクチャ・実装               | [`docs/00.project/0002.architecture-implementation.md`](docs/00.project/0002.architecture-implementation.md) |
+| ドメイン設計         | 数学的基礎                         | [`docs/10.domain/1001.mathematical-foundation.md`](docs/10.domain/1001.mathematical-foundation.md)     |
+| 品質・プロセス       | Git・PR                            | [`docs/30.quality/3002.git-pr.md`](docs/30.quality/3002.git-pr.md)                                    |
+| ナレッジ             | MVP計算エンジン計画                | [`docs/70.knowledge/7001.mvp-calculation-engine-plan.md`](docs/70.knowledge/7001.mvp-calculation-engine-plan.md) |
+| 日報                 | テンプレート                       | [`docs/80.dailyReport/template.md`](docs/80.dailyReport/template.md)                                  |
 
 # 開発ワークフローと参照ドキュメント
 
@@ -115,12 +104,6 @@ uv run pre-commit run --all-files
 
 作業を開始する前に、まずIssueやタスクの背景を完全に理解する。要件や仕様が不明瞭な場合は、実装に着手する前に必ず確認すること。
 
-- **参照ドキュメント**:
-  - **要件の理解**: `docs/00.project/0001.requirements.md`
-  - **UI/UXの確認**: `docs/00.project/0002.screenDesign.md` と配下の各画面設計書
-  - **ブランチ戦略**: `docs/30.quality/3002.git-pr.md`
-  - **Issue起票**: `.github/ISSUE_TEMPLATE`
-
 ---
 
 ### **Phase 2: 設計**
@@ -128,13 +111,6 @@ uv run pre-commit run --all-files
 **目的**: 実装に着手する前に、どのように作るかを決定する。システムの保守性と拡張性を担保するための最も重要なフェーズ。
 
 アーキテクチャや設計原則に立ち返り、新しいコードが既存のシステムとどのように調和するかを考える。複雑な機能の場合は、設計内容をドキュメントにまとめること。
-
-- **参照ドキュメント**:
-  - **全体構造の確認**: `docs/20.development/2004.architecture.md`
-  - **設計思想の遵守**: `docs/20.development/2002.development-principles.md`
-  - **コンポーネント設計**: `docs/20.development/2003.frontend-design.md`
-  - **ドメインロジックの確認**: `docs/10.domain/1001.domainSystem.md`
-  - **音楽理論概念の確認**: `docs/10.domain/1002.music-theory-guidebook.md`
 
 ---
 
@@ -144,11 +120,6 @@ uv run pre-commit run --all-files
 
 コーディング規約を遵守し、一貫性のあるコードを作成する。実装中に設計上の問題に気づいた場合は、立ち止まってPhase 2に戻る勇気を持つこと。
 
-- **参照ドキュメント**:
-  - **コーディング規約**: `docs/20.development/2001.basic-coding.md`
-  - **スタイリングとコンポーネント実装**: `docs/20.development/2003.frontend-design.md`
-  - **開発効率化ツールの活用**: `docs/30.quality/3003.mcp-tools-usage.md`
-
 ---
 
 ### **Phase 4: 品質保証**
@@ -156,9 +127,6 @@ uv run pre-commit run --all-files
 **目的**: 実装したコードが期待通りに動作し、既存の機能を破壊しないことを保証する。
 
 「テストなきコードはレガシーコードである」という原則に基づき、必ずテストコードを記述する。
-
-- **参照ドキュメント**:
-  - **テスト方針の確認**: `docs/30.quality/3001.testing.md`
 
 ---
 
