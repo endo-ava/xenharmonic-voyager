@@ -8,7 +8,7 @@ import streamlit as st
 from pydantic import ValidationError
 
 from src.calculator import calculate_consonance
-from src.ui_constants import (
+from src.constants import (
     ROUGHNESS_CONSONANT,
     ROUGHNESS_EXTREMELY_CONSONANT,
     ROUGHNESS_SLIGHTLY_CONSONANT,
