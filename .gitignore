@@ -1,6 +1,9 @@
 # IDE
 .vscode/
 
+# AI Tools
+.serena/
+
 # Python
 __pycache__/
 *.py[cod]

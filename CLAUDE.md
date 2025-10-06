@@ -41,11 +41,8 @@ just install
 # Streamlitアプリケーションの起動（開発サーバー）
 just dev
 
-# テストの実行
+# テストの実行（カバレッジ付き）
 just test
-
-# カバレッジ付きテスト実行
-just test-cov
 
 # Lintとフォーマットのチェック
 just lint
