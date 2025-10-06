@@ -27,12 +27,12 @@ class TestHarmonic:
 
     def test_invalid_amplitude_negative(self):
         """負の振幅でValueErrorが発生"""
-        with pytest.raises(ValueError, match=r"振幅は[0, 1]の範囲内である必要があります"):
+        with pytest.raises(ValueError, match=r"振幅は\[0, 1\]の範囲内である必要があります"):
             Harmonic(frequency=440.0, amplitude=-0.1)
 
     def test_invalid_amplitude_greater_than_one(self):
         """振幅が1より大きい場合にValueErrorが発生"""
-        with pytest.raises(ValueError, match=r"振幅は[0, 1]の範囲内である必要があります"):
+        with pytest.raises(ValueError, match=r"振幅は\[0, 1\]の範囲内である必要があります"):
             Harmonic(frequency=440.0, amplitude=1.1)
 
     def test_amplitude_zero_is_valid(self):

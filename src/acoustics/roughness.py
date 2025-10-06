@@ -113,7 +113,7 @@ def calculate_dissonance_curve(
     term1 = np.exp(-b1 * x)
     term2 = np.exp(-b2 * x)
 
-    return term1 - term2
+    return float(term1 - term2)
 
 
 def calculate_roughness_pair(

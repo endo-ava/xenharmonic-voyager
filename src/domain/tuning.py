@@ -84,7 +84,7 @@ class TuningSystem:
             >>> tuning.get_frequency(-12) # A3 (octave down)
             220.0
         """
-        return self.base_frequency * (2.0 ** (step / self.edo))
+        return float(self.base_frequency * (2.0 ** (step / self.edo)))
 
     def get_interval_cents(self, steps: int) -> float:
         """指定されたステップ数のインターバルサイズをセントで計算します。

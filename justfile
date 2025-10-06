@@ -17,11 +17,6 @@ dev:
 test:
     uv run pytest
 
-# Run tests with coverage report
-test-cov:
-    uv run pytest --cov=src --cov-report=html
-    @echo "Coverage report generated in htmlcov/index.html"
-
 # Run lint checks (without fixing)
 lint:
     uv run ruff check .
@@ -29,6 +24,10 @@ lint:
 # Run format checks (without fixing)
 format-check:
     uv run ruff format --check .
+
+# Run type checks
+typecheck:
+    uv run mypy src --strict --ignore-missing-imports
 
 # Auto-fix lint issues
 fix:
@@ -48,6 +47,8 @@ prepare:
     @echo "🔧 Auto-fixing lint and format issues..."
     uv run ruff check --fix .
     uv run ruff format .
+    @echo "🔍 Running type checks..."
+    uv run mypy src --strict --ignore-missing-imports
     @echo "✨ Running pre-commit hooks..."
     uv run pre-commit run --all-files || uv run pre-commit run --all-files
     @echo "✅ Ready to commit!"
