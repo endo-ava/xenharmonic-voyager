@@ -4,8 +4,8 @@
 # Target Python 3.13+
 target-version = "py313"
 
-# Line length
-line-length = 88
+# Line length (緩和: 日本語コメント・エラーメッセージを考慮)
+line-length = 100
 
 [lint]
 # Enable recommended rules
@@ -38,9 +38,10 @@ select = [
 
 # Ignore specific rules
 ignore = [
-    "ANN101", # Missing type annotation for self
-    "ANN102", # Missing type annotation for cls
+    "ANN101", # Missing type annotation for self (removed in newer Ruff versions)
+    "ANN102", # Missing type annotation for cls (removed in newer Ruff versions)
     "ANN401", # Dynamically typed expressions (Any) are allowed
+    "RUF002", # Ambiguous unicode characters (日本語コメント・ドキュメントで誤検出を避けるため)
 ]
 
 [lint.per-file-ignores]

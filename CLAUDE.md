@@ -27,6 +27,45 @@
 
 # 主要な開発コマンド
 
+## Justfileを使用する場合（推奨）
+
+[Just](https://just.systems/)がインストールされている場合、以下の便利なコマンドが使用できます：
+
+```bash
+# コマンド一覧を表示
+just --list
+
+# 依存関係のインストール（開発依存含む）
+just install
+
+# Streamlitアプリケーションの起動（開発サーバー）
+just dev
+
+# テストの実行
+just test
+
+# カバレッジ付きテスト実行
+just test-cov
+
+# Lintとフォーマットのチェック
+just lint
+just format-check
+
+# 自動フォーマット適用
+just fix
+
+# pre-commitフックの実行
+just pre
+
+# コミット前の準備（自動修正+検証まで完了）⭐推奨
+just prepare
+
+# 生成ファイルのクリーンアップ
+just clean
+```
+
+## uvコマンドを直接使用する場合
+
 ```bash
 # 依存関係のインストール（開発依存含む）
 uv sync
@@ -40,6 +79,7 @@ uv run ruff format --check .
 
 # 自動フォーマット適用
 uv run ruff format .
+uv run ruff check --fix .
 
 # テストの実行
 uv run pytest
@@ -50,9 +90,13 @@ uv run pytest --cov=src --cov-report=html
 # pre-commitフックのインストール
 uv run pre-commit install
 
-# pre-commitフックの手動実行
+# pre-commitフックの手動実行（2回実行すると必ず通る）
 uv run pre-commit run --all-files
+uv run pre-commit run --all-files  # 自動修正後の検証
 ```
+
+**Note**: Pre-commitは2段階動作します。1回目で自動修正、2回目で検証が通ります。詳細は `docs/70.knowledge/7002.pre-commit-workflow.md` を参照してください。
+
 
 # ドキュメント体系
 
@@ -92,6 +136,7 @@ uv run pre-commit run --all-files
 | ドメイン設計         | 数学的基礎                         | [`docs/10.domain/1001.mathematical-foundation.md`](docs/10.domain/1001.mathematical-foundation.md)     |
 | 品質・プロセス       | Git・PR                            | [`docs/30.quality/3002.git-pr.md`](docs/30.quality/3002.git-pr.md)                                    |
 | ナレッジ             | MVP計算エンジン計画                | [`docs/70.knowledge/7001.mvp-calculation-engine-plan.md`](docs/70.knowledge/7001.mvp-calculation-engine-plan.md) |
+| ナレッジ             | Pre-commitワークフロー             | [`docs/70.knowledge/7002.pre-commit-workflow.md`](docs/70.knowledge/7002.pre-commit-workflow.md)       |
 | 日報                 | テンプレート                       | [`docs/80.dailyReport/template.md`](docs/80.dailyReport/template.md)                                  |
 
 # 開発ワークフローと参照ドキュメント

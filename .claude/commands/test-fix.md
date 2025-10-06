@@ -2,7 +2,7 @@
 
 ### 手順
 
-1. `npm run test:all`を実行し、失敗ケースを確認  
+1. `npm run test:all`を実行し、失敗ケースを確認
    （以降、失敗ケースがUTの場合は`npm run test:run`、Storybookテストの場合は`npm run test:storybook`を使用）
 2. 失敗ケースについて原因分析
 3. 原因を以下の通り切り分け、それぞれで順序立てて実施する
