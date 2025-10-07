@@ -11,6 +11,7 @@
 """
 
 from dataclasses import dataclass
+from itertools import combinations
 
 from src.acoustics.roughness import calculate_roughness_pair
 from src.domain.harmonics import Harmonic, TimbreModel
@@ -128,20 +129,16 @@ class ConsonanceCalculator:
         ]
 
         # ステップ3:すべての音符からのすべての倍音をフラットなリストに収集
-        all_harmonics: list[Harmonic] = []
-        for series in harmonic_series_list:
-            all_harmonics.extend(series.harmonics)
+        all_harmonics: list[Harmonic] = [
+            harmonic for series in harmonic_series_list for harmonic in series.harmonics
+        ]
 
         # ステップ4:すべてのユニークな倍音ペアに対してペアワイズラフネスを計算
-        total_roughness = 0.0
-        num_pairs = 0
+        harmonic_pairs = combinations(all_harmonics, 2)
+        total_roughness = sum(calculate_roughness_pair(h1, h2) for h1, h2 in harmonic_pairs)
 
-        # ネストしたループを使用してすべてのユニークなペアを取得(i < j)
-        for i in range(len(all_harmonics)):
-            for j in range(i + 1, len(all_harmonics)):
-                roughness = calculate_roughness_pair(all_harmonics[i], all_harmonics[j])
-                total_roughness += roughness
-                num_pairs += 1
+        # num_pairs: C(n, 2) = n * (n - 1) / 2
+        num_pairs = (len(all_harmonics) * (len(all_harmonics) - 1)) // 2
 
         return ConsonanceResult(
             total_roughness=total_roughness,

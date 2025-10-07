@@ -102,8 +102,8 @@ class TestConsonanceCalculator:
         with pytest.raises(ValueError, match="chord_stepsを空にすることはできません"):
             calculator.calculate_consonance([])
 
-    def test_single_note_zero_roughness(self):
-        """単一の音符はゼロのラフネスを持つ(比較ペアなし)"""
+    def test_single_note_has_roughness_from_harmonics(self):
+        """単一の音符でもその倍音同士の干渉によりラフネスが発生する"""
         tuning = TuningSystem(edo=12, base_frequency=440.0)
         timbre = SawtoothTimbre()
         calculator = ConsonanceCalculator(tuning, timbre, num_harmonics=10)

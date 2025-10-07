@@ -194,11 +194,4 @@ def calculate_total_roughness(
         >>> calculate_total_roughness(pairs)
         # この三和音の総ラフネスを返す
     """
-    if not harmonic_pairs:
-        return 0.0
-
-    total = 0.0
-    for h1, h2 in harmonic_pairs:
-        total += calculate_roughness_pair(h1, h2)
-
-    return total
+    return sum(calculate_roughness_pair(h1, h2) for h1, h2 in harmonic_pairs)
