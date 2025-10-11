@@ -1,25 +1,26 @@
 # 🎵 Xenharmonic Voyager
 
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://xenharmonic-voyager.streamlit.app/)
 [![CI](https://github.com/endo-ava/xenharmonic-voyager/actions/workflows/ci.yml/badge.svg)](https://github.com/endo-ava/xenharmonic-voyager/actions/workflows/ci.yml)
 [![Python 3.13+](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/downloads/)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 
 An experimental web application to explore xenharmonic consonance using Sethares' acoustic roughness model.
 
-## 📖 Overview
+## Overview
 
 Xenharmonic Voyager is an interactive visualization tool that calculates and displays consonance scores for chords in various equal divisions of the octave (N-EDO). Unlike traditional music theory apps that focus on 12-tone equal temperament (12-EDO), this application allows you to explore the acoustic properties of alternative tuning systems.
 
 The application implements Sethares' acoustic roughness model to provide objective, physics-based consonance measurements rather than relying on cultural conventions or subjective judgments.
 
-## 🎯 Features
+## Features
 
 - **N-EDO Support**: Analyze chords in 12-EDO, 19-EDO, and potentially other equal divisions
 - **Consonance Calculation**: Uses Sethares' (1993) acoustic roughness model
 - **Interactive UI**: Built with Streamlit for rapid prototyping and experimentation
 - **Scientific Computing**: Leverages NumPy for efficient harmonic series calculations
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 ### Core Dependencies
 - **Python 3.13+**: Modern Python features and performance
@@ -33,7 +34,7 @@ The application implements Sethares' acoustic roughness model to provide objecti
 - **Pytest**: Comprehensive testing framework with coverage reporting
 - **pre-commit**: Git hooks for code quality enforcement
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -88,7 +89,7 @@ uv run ruff check --fix .
 uv run ruff format .
 ```
 
-## 🏗️ Project Structure
+## Project Structure
 
 ```
 xenharmonic-voyager/
@@ -106,7 +107,7 @@ xenharmonic-voyager/
 └── pyproject.toml         # Project metadata and dependencies
 ```
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - William Sethares for the acoustic roughness model
 - The Xenharmonic community for inspiration and resources
