@@ -3,6 +3,7 @@
 
 # AI Tools
 .serena/
+.gemini/
 
 # Python
 __pycache__/
