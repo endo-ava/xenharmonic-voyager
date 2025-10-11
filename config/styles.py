@@ -18,18 +18,18 @@ CUSTOM_CSS = """
         border: 2px solid rgba(128, 128, 128, 0.2);
     }
 
-    /* 選択ボタンにグロー効果 */
+    /* 選択ボタンを青系統に変更 */
     .stButton > button[kind="primary"] {
+        background-color: #1d4ed8 !important;
+        color: white !important;
         box-shadow: 0 0 15px rgba(29, 78, 216, 0.5);
         border: 2px solid rgba(29, 78, 216, 0.8);
     }
 
-    /* メトリクスを計測器風に */
-    [data-testid="stMetricValue"] {
-        font-family: 'Courier New', monospace;
-        font-size: 32px;
-        font-weight: 700;
-        letter-spacing: 2px;
+    /* ホバー時も青系統を維持 */
+    .stButton > button[kind="primary"]:hover {
+        background-color: #2563eb !important;
+        border: 2px solid rgba(37, 99, 235, 0.9);
     }
 
     /* ヘッダーをシンプルに */
