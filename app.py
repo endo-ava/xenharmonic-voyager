@@ -52,6 +52,13 @@ def initialize_session_state() -> None:
         if key not in st.session_state:
             st.session_state[key] = value
 
+    # Clear legacy dict-based observations (force reset)
+    if st.session_state[STATE_OBSERVATION_HISTORY] and any(
+        isinstance(obs, dict) for obs in st.session_state[STATE_OBSERVATION_HISTORY]
+    ):
+        st.session_state[STATE_OBSERVATION_HISTORY] = []
+        st.session_state[STATE_PINNED_OBSERVATIONS] = []
+
 
 # ===== Initialize =====
 initialize_session_state()
