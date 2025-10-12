@@ -7,188 +7,291 @@
 import streamlit as st
 from pydantic import ValidationError
 
-from src.calculator import calculate_consonance
-from src.constants import (
-    ROUGHNESS_CONSONANT,
-    ROUGHNESS_EXTREMELY_CONSONANT,
-    ROUGHNESS_SLIGHTLY_CONSONANT,
-    ROUGHNESS_SLIGHTLY_DISSONANT,
+from config.constants import (
+    REF_CHORD_MAJOR_TRIAD,
+    REF_CHORD_MINOR_SECOND,
+    STATE_EDO,
+    STATE_MAX_SCORE,
+    STATE_NUM_NOTES,
+    STATE_OBSERVATION_HISTORY,
+    STATE_PINNED_OBSERVATIONS,
+    STATE_REFERENCE_SCORE,
+    STATE_SELECTED_NOTES,
 )
+from config.styles import CUSTOM_CSS
+from src.calculator import calculate_consonance
+from ui import render_sidebar, render_step_selector
+from ui.analysis_view import render_analysis_view
+from ui.history_view import record_observation, render_history_view
+from ui.step_selector import render_selection_status
 
+# ===== Page Configuration =====
 st.set_page_config(
     page_title="Xenharmonic Voyager",
     page_icon="🎵",
     layout="wide",
 )
 
-# タイトルと説明
+# ===== Custom CSS =====
+st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
+
+
+# ===== Helper Functions =====
+def initialize_session_state() -> None:
+    """Initialize session state"""
+    defaults = {
+        STATE_EDO: 12,
+        STATE_NUM_NOTES: 3,
+        STATE_SELECTED_NOTES: [],
+        STATE_REFERENCE_SCORE: None,
+        STATE_MAX_SCORE: None,
+        STATE_OBSERVATION_HISTORY: [],
+        STATE_PINNED_OBSERVATIONS: [],
+    }
+    for key, value in defaults.items():
+        if key not in st.session_state:
+            st.session_state[key] = value
+
+    # Clear legacy dict-based observations (force reset)
+    if st.session_state[STATE_OBSERVATION_HISTORY] and any(
+        isinstance(obs, dict) for obs in st.session_state[STATE_OBSERVATION_HISTORY]
+    ):
+        st.session_state[STATE_OBSERVATION_HISTORY] = []
+        st.session_state[STATE_PINNED_OBSERVATIONS] = []
+
+
+# ===== Initialize =====
+initialize_session_state()
+
+# Calculate reference scores at startup (once only)
+if st.session_state[STATE_REFERENCE_SCORE] is None:
+    st.session_state[STATE_REFERENCE_SCORE] = calculate_consonance(
+        edo=12,
+        notes=REF_CHORD_MAJOR_TRIAD,
+    )
+if st.session_state[STATE_MAX_SCORE] is None:
+    st.session_state[STATE_MAX_SCORE] = calculate_consonance(
+        edo=12,
+        notes=REF_CHORD_MINOR_SECOND,
+    )
+
+# ===== Title and Description =====
 st.title("Xenharmonic Voyager")
 st.markdown(
     """
-**Setharesの音響的ラフネスモデル**を使用して、さまざまなチューニングシステムにおける
-協和性を探求します。ラフネス値が低いほど、協和性が高い(より心地よい音)ことを示します。
-"""
+    Setharesの音響的ラフネスモデルを使用して、さまざまなチューニングシステムにおける協和性を探求します。
+    ラフネス値が低いほど、協和性が高いことを示します。
+    """
 )
 
-# 設定用サイドバー
-with st.sidebar:
-    st.header("設定")
+# ===== Sidebar: Parameters =====
+edo, num_notes = render_sidebar()
 
-    edo = st.number_input(
-        "EDO (Equal Divisions of Octave)",
-        min_value=1,
-        max_value=100,
-        value=12,
-        help="1オクターブあたりの等しい分割数。12-EDO = 標準的な西洋音律。",
+# ===== Main Area: Step Selection =====
+render_step_selector(edo, st.session_state[STATE_SELECTED_NOTES], num_notes)
+render_selection_status(edo, st.session_state[STATE_SELECTED_NOTES])
+
+# ===== Analysis and History =====
+if len(st.session_state[STATE_SELECTED_NOTES]) == num_notes:
+    try:
+        # Calculate roughness
+        current_roughness = calculate_consonance(
+            edo=st.session_state[STATE_EDO],
+            notes=st.session_state[STATE_SELECTED_NOTES],
+        )
+
+        # Render analysis results
+        render_analysis_view(current_roughness)
+
+        # Record and render history
+        record_observation(
+            st.session_state[STATE_EDO],
+            st.session_state[STATE_SELECTED_NOTES],
+            current_roughness,
+        )
+        render_history_view()
+
+    except ValidationError as e:
+        st.error(f"Validation Error: {e}")
+    except Exception as e:
+        st.error(f"Calculation Error: {e}")
+
+# ===== Detail Information =====
+st.divider()
+
+# Calculation Parameters
+with st.expander("Calculation Parameters", expanded=True):
+    selected_notes_display = (
+        st.session_state[STATE_SELECTED_NOTES] if st.session_state[STATE_SELECTED_NOTES] else "なし"
+    )
+    st.markdown(
+        f"""
+        **現在の計算パラメータ:**
+        - **音律システム**: {st.session_state[STATE_EDO]}-EDO
+        - **選択された音**: {selected_notes_display}
+        - **構成音数**: {st.session_state[STATE_NUM_NOTES]}音
+        - **使用モデル**: Sethares音響的ラフネスモデル (1993)
+        - **音色モデル**: ノコギリ波 (Sawtooth Wave, 倍音振幅 = 1/k)
+        - **考慮倍音数**: 第1~第10倍音
+        - **基本周波数**: 440 Hz (A4)
+        """
     )
 
-    base_frequency = st.number_input(
-        "基本周波数 (Hz)",
-        min_value=20.0,
-        max_value=2000.0,
-        value=440.0,
-        step=1.0,
-        help="ステップ0の基準周波数(デフォルト:A4 = 440 Hz)。",
+# About This Calculation
+with st.expander("About This Calculation"):
+    st.markdown(
+        r"""
+        ## Setharesの音響的ラフネスモデル
+
+        このアプリケーションは、**Sethares (1993)** の音響的ラフネスモデルを使用して、
+        和音の協和性を物理的・客観的に計算します。
+
+        ---
+
+        ### 1. N-EDO音律理論
+
+        N-EDO (N-Equal Divisions of the Octave) は、オクターブをN個の等しい音程に分割する
+        音律システムです。
+
+        #### 周波数計算式
+
+        第 $n$ ステップの周波数 $f(n)$ は、基準周波数 $f_{\text{base}}$ から以下の式で
+        計算されます:
+
+        $$
+        f(n) = f_{\text{base}} \times 2^{n/N}
+        $$
+
+        - $f_{\text{base}} = 440$ Hz (A4)
+        - $N$: オクターブの分割数 (例: 12-EDO、19-EDOなど)
+        - $n$: ステップインデックス (0からN-1)
+
+        **例** (12-EDO、完全5度): $f(7) = 440 \times 2^{7/12} \approx 659.25$ Hz
+
+        ---
+
+        ### 2. 倍音列生成 (ノコギリ波モデル)
+
+        実際の楽器音は、基音だけでなく整数倍の周波数を持つ**倍音 (harmonics)** を含みます。
+        本アプリでは、ノコギリ波の音色モデルを採用しています。
+
+        #### 倍音の振幅減衰則
+
+        第 $k$ 倍音の周波数と振幅:
+
+        $$
+        f_k = k \times f_0, \quad a_k = \frac{1}{k} \quad (k = 1, 2, 3, \ldots, 10)
+        $$
+
+        | 倍音次数 | 周波数 | 振幅 |
+        |---------|--------|------|
+        | 1 | $f_0$ | 1.0 |
+        | 2 | $2f_0$ | 0.5 |
+        | 3 | $3f_0$ | 0.333 |
+        | 10 | $10f_0$ | 0.1 |
+
+        この**1/k減衰則**により、自然な音色の特性が再現されます。
+
+        ---
+
+        ### 3. クリティカルバンド幅理論
+
+        **クリティカルバンド幅 (Critical Bandwidth, CB)** は、聴覚系が周波数を分解できる
+        最小単位です。2つの音が同じクリティカルバンド内に存在すると、神経レベルで干渉し、
+        ラフネス (粗さ) として知覚されます。
+
+        #### Plomp & Levelの線形近似式
+
+        本実装では、計算効率と精度のバランスを考慮し、以下の線形近似式を使用しています:
+
+        $$
+        CB(f) = 0.24 \times f + 25 \text{ Hz}
+        $$
+
+        **例**: 440 Hz (A4) のクリティカルバンド幅 = $0.24 \times 440 + 25 \approx 130.6$ Hz
+
+        ---
+
+        ### 4. ラフネス計算 (Setharesモデル)
+
+        #### 4.1 ディソナンス曲線
+
+        2つの純音間のディソナンス (不協和度) は、以下の曲線でモデル化されます:
+
+        $$
+        g(x) = e^{-3.5x} - e^{-5.75x}
+        $$
+
+        ここで、$x = \frac{\Delta f}{CB(f_{\min})}$ は正規化された周波数差です。
+
+        **曲線の特徴**:
+        - $x = 0$ (ユニゾン): ディソナンス = 0
+        - $x \approx 0.24$: 最大ディソナンス
+        - $x$ が大きい: ディソナンス → 0 (協和)
+
+        #### 4.2 ペアワイズラフネス
+
+        2つの倍音 $(f_1, a_1)$ と $(f_2, a_2)$ 間のラフネス:
+
+        $$
+        R(f_1, f_2, a_1, a_2) = a_1 \times a_2 \times g\left(
+        \frac{|f_2 - f_1|}{CB(\min(f_1, f_2))} \right)
+        $$
+
+        振幅積 $a_1 \times a_2$ により、両音の音量に応じてラフネスがスケールされます。
+
+        #### 4.3 総ラフネスの計算
+
+        和音の総ラフネス $R_{\text{total}}$ は、**すべての異なる倍音ペア**のラフネスの
+        総和です:
+
+        $$
+        R_{\text{total}} = \sum_{i=1}^{N \times M} \sum_{j=i+1}^{N \times M} R(f_i, f_j, a_i, a_j)
+        $$
+
+        - $N$: 和音の構成音数
+        - $M$: 各音の倍音数 (本実装では10)
+
+        **計算例** (3和音、10倍音):
+        - 総倍音数: $3 \times 10 = 30$
+        - ペア数: $\binom{30}{2} = 435$ ペア
+
+        ---
+
+        ### 5. 協和度の解釈
+
+        - **ラフネスが低い = 協和性が高い** (心地よく響く)
+        - **ラフネスが高い = 不協和性が高い** (濁った響き)
+
+        #### 代表的な音程の例 (12-EDO基準)
+
+        | 音程 | ステップ | 総ラフネス |
+        |------|---------|-----------|
+        | 完全5度 | [0, 7] | 0.083 |
+        | 長3度 | [0, 4] | 0.140 |
+        | 短3度 | [0, 3] | 0.190 |
+        | 短2度 | [0, 1] | 0.331 |
+
+        このモデルは、倍音の物理的干渉に基づき、なぜ完全五度が協和的で、
+        短2度が不協和なのかを定量的に説明します。
+
+        ---
+
+        ### 参考文献
+
+        - **Sethares, W. A. (1993).** "Local consonance and the relationship between
+          timbre and scale." *Journal of the Acoustical Society of America*, 94(3), 1218-1228.
+        - **Plomp, R., & Levelt, W. J. M. (1965).** "Tonal consonance and critical bandwidth."
+          *Journal of the Acoustical Society of America*, 38, 548-560.
+
+        """
     )
 
-    num_harmonics = st.slider(
-        "倍音の数",
-        min_value=1,
-        max_value=20,
-        value=10,
-        help="各音符ごとに生成する倍音(オーバートーン)の数。",
-    )
-
-# メインコンテンツエリア
-st.header("和音の協和性計算機")
-
-col1, col2 = st.columns([2, 1])
-
-with col1:
-    st.subheader("入力和音")
-
-    chord_input_help = (
-        f"0から{edo - 1}までの音符インデックスを入力します。例:12-EDOの長三和音の場合は0,4,7。"
-    )
-    chord_input = st.text_input(
-        "音符のステップをカンマ区切りで入力",
-        value="0, 4, 7",
-        help=chord_input_help,
-    )
-
-    # プリセットボタン
-    st.write("**クイックプリセット (12-EDO):**")
-    preset_col1, preset_col2, preset_col3, preset_col4 = st.columns(4)
-
-    with preset_col1:
-        if st.button("長三度"):
-            chord_input = "0, 4"
-
-    with preset_col2:
-        if st.button("短三度"):
-            chord_input = "0, 3"
-
-    with preset_col3:
-        if st.button("完全5度"):
-            chord_input = "0, 7"
-
-    with preset_col4:
-        if st.button("短2度"):
-            chord_input = "0, 1"
-
-# 和音入力の解析
-try:
-    # カンマ区切りの整数を解析
-    notes = [int(n.strip()) for n in chord_input.split(",")]
-
-    if not notes:
-        st.error("少なくとも1つの音符を入力してください。")
-    else:
-        # 協和性の計算
-        try:
-            roughness = calculate_consonance(
-                edo=edo,
-                notes=notes,
-                base_frequency=base_frequency,
-                num_harmonics=num_harmonics,
-            )
-
-            with col2:
-                st.subheader("結果")
-                st.metric(
-                    label="音響的ラフネス",
-                    value=f"{roughness:.4f}",
-                    help="値が低いほど協和性が高い(より心地よい音)ことを示します。",
-                )
-
-                # ラフネスの解釈
-                if roughness < ROUGHNESS_EXTREMELY_CONSONANT:
-                    interpretation = "非常に協和的 🎶"
-                    color = "green"
-                elif roughness < ROUGHNESS_CONSONANT:
-                    interpretation = "協和的 ✅"
-                    color = "green"
-                elif roughness < ROUGHNESS_SLIGHTLY_CONSONANT:
-                    interpretation = "やや協和的 🎵"
-                    color = "orange"
-                elif roughness < ROUGHNESS_SLIGHTLY_DISSONANT:
-                    interpretation = "やや不協和的 ⚠️"
-                    color = "orange"
-                else:
-                    interpretation = "不協和的 ❌"
-                    color = "red"
-
-                st.markdown(f"**解釈:** :{color}[{interpretation}]")
-
-            # 追加情報
-            st.divider()
-            st.subheader("この計算について")
-
-            info_col1, info_col2, info_col3 = st.columns(3)
-
-            with info_col1:
-                st.metric("和音の音符数", len(notes))
-
-            with info_col2:
-                st.metric("音律システム", f"{edo}-EDO")
-
-            with info_col3:
-                num_pairs = (len(notes) * num_harmonics) * (len(notes) * num_harmonics - 1) // 2
-                st.metric("分析された倍音ペアの数", f"{num_pairs:,}")
-
-            with st.expander("i この仕組みは?"):
-                st.markdown(
-                    """
-このアプリは、**Setharesの音響的ラフネスモデル**(1993)を使用して協和性を計算します:
-
-1. **倍音の生成**: 各音符は、のこぎり波の音色モデルを使用して
-   倍音(オーバートーン)を生成します。
-2. **ラフネスの計算**: 各倍音ペアについて、以下に基づいて感覚的な不協和を計算します:
-   - 周波数分離(近いほどラフネスが高い)
-   - 臨界帯域幅(周波数に依存する知覚の閾値)
-   - 振幅重み付け(大きい音ほどラフネスが高い)
-3. **合計**: すべての倍音ペアからのラフネスを合計します。
-
-**ラフネスが低い = 協和性が高い**
-
-このモデルは、倍音の物理的な干渉に基づいて、なぜオクターブ(2:1の比率)が
-協和的に聞こえ、短2度が不協和に聞こえるのかを説明します。
-"""
-                )
-
-        except ValidationError as e:
-            st.error(f"無効な入力です: {e}")
-        except Exception as e:
-            st.error(f"協和性の計算中にエラーが発生しました: {e}")
-
-except ValueError:
-    st.error("無効な入力形式です。カンマ区切りの整数を入力してください(例:0, 4, 7)。")
-
-# フッター
+# Footer
 st.divider()
 st.caption(
     """
-**Xenharmonic Voyager** - 12-EDOを超えたチューニングシステムの探求
-Streamlitで構築 | Setharesのラフネスモデル(1993)を利用
-"""
+    **Xenharmonic Voyager** - 12-EDOを超えたチューニングシステムの探求
+    Streamlitで構築 | Setharesのラフネスモデル (1993) を利用
+    """
 )
