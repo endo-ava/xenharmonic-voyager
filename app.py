@@ -7,6 +7,17 @@
 import streamlit as st
 from pydantic import ValidationError
 
+from config.constants import (
+    REF_CHORD_MAJOR_TRIAD,
+    REF_CHORD_MINOR_SECOND,
+    STATE_EDO,
+    STATE_MAX_SCORE,
+    STATE_NUM_NOTES,
+    STATE_OBSERVATION_HISTORY,
+    STATE_PINNED_OBSERVATIONS,
+    STATE_REFERENCE_SCORE,
+    STATE_SELECTED_NOTES,
+)
 from config.styles import CUSTOM_CSS
 from src.calculator import calculate_consonance
 from ui import render_sidebar, render_step_selector
@@ -29,13 +40,13 @@ st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
 def initialize_session_state() -> None:
     """Initialize session state"""
     defaults = {
-        "edo": 12,
-        "num_notes": 3,
-        "selected_notes": [],
-        "reference_score": None,
-        "max_score": None,
-        "observation_history": [],
-        "pinned_observations": [],
+        STATE_EDO: 12,
+        STATE_NUM_NOTES: 3,
+        STATE_SELECTED_NOTES: [],
+        STATE_REFERENCE_SCORE: None,
+        STATE_MAX_SCORE: None,
+        STATE_OBSERVATION_HISTORY: [],
+        STATE_PINNED_OBSERVATIONS: [],
     }
     for key, value in defaults.items():
         if key not in st.session_state:
@@ -49,8 +60,8 @@ initialize_session_state()
 st.title("Xenharmonic Voyager")
 st.markdown(
     """
-    N-EDOにおいて任意の数の音を選択し、その響きの「協和度」を
-    **Setharesの音響的ラフネスモデル**でリアルタイムに計算・可視化します。
+    Setharesの音響的ラフネスモデルを使用して、さまざまなチューニングシステムにおける協和性を探求します。
+    ラフネス値が低いほど、協和性が高いことを示します。
     """
 )
 
@@ -58,37 +69,41 @@ st.markdown(
 edo, num_notes = render_sidebar()
 
 # ===== Main Area: Step Selection =====
-render_step_selector(edo, st.session_state.selected_notes, num_notes)
-render_selection_status(edo, st.session_state.selected_notes)
+render_step_selector(edo, st.session_state[STATE_SELECTED_NOTES], num_notes)
+render_selection_status(edo, st.session_state[STATE_SELECTED_NOTES])
 
 # ===== Analysis and History =====
-if len(st.session_state.selected_notes) == num_notes:
+if len(st.session_state[STATE_SELECTED_NOTES]) == num_notes:
     try:
         # Calculate roughness
         current_roughness = calculate_consonance(
-            edo=st.session_state.edo,
-            notes=st.session_state.selected_notes,
+            edo=st.session_state[STATE_EDO],
+            notes=st.session_state[STATE_SELECTED_NOTES],
         )
 
         # 基準値の計算 (初回のみ)
-        if st.session_state.reference_score is None:
-            st.session_state.reference_score = calculate_consonance(
+        if st.session_state[STATE_REFERENCE_SCORE] is None:
+            st.session_state[STATE_REFERENCE_SCORE] = calculate_consonance(
                 edo=12,
-                notes=[0, 4, 7],  # 12-EDO 長三和音
+                notes=REF_CHORD_MAJOR_TRIAD,
             )
 
         # 最大値の計算 (初回のみ)
-        if st.session_state.max_score is None:
-            st.session_state.max_score = calculate_consonance(
+        if st.session_state[STATE_MAX_SCORE] is None:
+            st.session_state[STATE_MAX_SCORE] = calculate_consonance(
                 edo=12,
-                notes=[0, 1],  # 12-EDO 短2度
+                notes=REF_CHORD_MINOR_SECOND,
             )
 
         # Render analysis results
         render_analysis_view(current_roughness)
 
         # Record and render history
-        record_observation(st.session_state.edo, st.session_state.selected_notes, current_roughness)
+        record_observation(
+            st.session_state[STATE_EDO],
+            st.session_state[STATE_SELECTED_NOTES],
+            current_roughness,
+        )
         render_history_view()
 
     except ValidationError as e:
@@ -101,14 +116,15 @@ st.divider()
 
 # Calculation Parameters
 with st.expander("Calculation Parameters", expanded=True):
+    selected_notes_display = (
+        st.session_state[STATE_SELECTED_NOTES] if st.session_state[STATE_SELECTED_NOTES] else "なし"
+    )
     st.markdown(
         f"""
         **現在の計算パラメータ:**
-        - **音律システム**: {st.session_state.edo}-EDO
-        - **選択された音**: {
-            st.session_state.selected_notes if st.session_state.selected_notes else "なし"
-        }
-        - **構成音数**: {st.session_state.num_notes}音
+        - **音律システム**: {st.session_state[STATE_EDO]}-EDO
+        - **選択された音**: {selected_notes_display}
+        - **構成音数**: {st.session_state[STATE_NUM_NOTES]}音
         - **使用モデル**: Sethares音響的ラフネスモデル (1993)
         - **音色モデル**: ノコギリ波 (Sawtooth Wave, 倍音振幅 = 1/k)
         - **考慮倍音数**: 第1~第10倍音
@@ -244,13 +260,14 @@ with st.expander("About This Calculation"):
 
         #### 代表的な音程の例 (12-EDO基準)
 
-        | 音程 | ステップ | 総ラフネス | 評価 |
-        |------|---------|-----------|------|
-        | 完全5度 | [0, 7] | 0.083 | 協和的 |
-        | 長3和音 | [0, 4, 7] | 0.370 | 協和的 |
-        | 短2度 | [0, 1] | 0.331 | 不協和的 |
+        | 音程 | ステップ | 総ラフネス |
+        |------|---------|-----------|
+        | 完全5度 | [0, 7] | 0.083 |
+        | 長3度 | [0, 4] | 0.140 |
+        | 短3度 | [0, 3] | 0.190 |
+        | 短2度 | [0, 1] | 0.331 |
 
-        このモデルは、倍音の物理的干渉に基づき、なぜオクターブ (2:1) が協和的で、
+        このモデルは、倍音の物理的干渉に基づき、なぜ完全五度が協和的で、
         短2度が不協和なのかを定量的に説明します。
 
         ---

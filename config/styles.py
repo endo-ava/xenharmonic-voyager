@@ -10,12 +10,18 @@ CUSTOM_CSS = """
 
     /* ボタンをグリッド状に整列 */
     .stButton > button {
-        height: 65px;
-        font-size: 18px;
-        font-family: 'Courier New', monospace;
-        font-weight: bold;
+        width: 110%;
+        height: 50px;
         border-radius: 4px;
         border: 2px solid rgba(128, 128, 128, 0.2);
+    }
+
+    /* ボタン内のテキストにもフォントサイズを確実に適用 */
+    .stButton > button p,
+    .stButton > button div {
+        font-size: 12px !important;
+        font-family: 'Courier New', monospace;
+        font-weight: bold;
     }
 
     /* 選択ボタンを青系統に変更 */

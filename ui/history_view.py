@@ -2,7 +2,12 @@
 
 import streamlit as st
 
-from config.constants import MAX_HISTORY_SIZE
+from config.constants import (
+    MAX_HISTORY_SIZE,
+    STATE_OBSERVATION_HISTORY,
+    STATE_PINNED_OBSERVATIONS,
+)
+from ui.models import Observation
 
 
 def record_observation(edo: int, notes: list[int], roughness: float) -> None:
@@ -13,13 +18,9 @@ def record_observation(edo: int, notes: list[int], roughness: float) -> None:
         notes: Selected note indices
         roughness: Calculated roughness value
     """
-    current_observation = {
-        "edo": edo,
-        "notes": tuple(notes),
-        "roughness": roughness,
-    }
+    current_observation = Observation(edo=edo, notes=tuple(notes), roughness=roughness)
 
-    history = st.session_state.observation_history
+    history = st.session_state[STATE_OBSERVATION_HISTORY]
     # 履歴の最後と同じでなければ追加
     if not history or history[-1] != current_observation:
         history.append(current_observation)
@@ -36,12 +37,12 @@ def get_all_observations() -> list[dict]:
     """
     pinned = [
         {"obs": obs, "is_pinned": True, "pin_idx": idx}
-        for idx, obs in enumerate(st.session_state.pinned_observations)
+        for idx, obs in enumerate(st.session_state[STATE_PINNED_OBSERVATIONS])
     ]
     unpinned = [
         {"obs": obs, "is_pinned": False, "history_idx": idx}
-        for idx, obs in enumerate(reversed(st.session_state.observation_history))
-        if obs not in st.session_state.pinned_observations
+        for idx, obs in enumerate(reversed(st.session_state[STATE_OBSERVATION_HISTORY]))
+        if obs not in st.session_state[STATE_PINNED_OBSERVATIONS]
     ]
     return pinned + unpinned
 
@@ -59,25 +60,25 @@ def render_history_view() -> None:
             col1, col2, col3, col4 = st.columns([2, 3, 2, 1])
 
             with col1:
-                st.code(f"R = {obs['roughness']:.6f}", language=None)
+                st.code(f"R = {obs.roughness:.6f}", language=None)
 
             with col2:
-                sorted_notes = sorted(obs["notes"])
+                sorted_notes = sorted(obs.notes)
                 notes_str = ", ".join(map(str, sorted_notes))
                 st.caption(f"S = ({notes_str})")
 
             with col3:
-                st.caption(f"{obs['edo']}-EDO")
+                st.caption(f"{obs.edo}-EDO")
 
             with col4:
                 if item["is_pinned"]:
                     # 固定済み:解除ボタンを表示
                     if st.button("📌🗑️", key=f"unpin_{item['pin_idx']}", help="Unpin"):
-                        st.session_state.pinned_observations.pop(item["pin_idx"])
+                        st.session_state[STATE_PINNED_OBSERVATIONS].pop(item["pin_idx"])
                         st.rerun()
                 # 未固定:固定ボタンを表示
                 elif st.button("📌", key=f"pin_{item['history_idx']}", help="Pin"):
-                    st.session_state.pinned_observations.append(obs)
+                    st.session_state[STATE_PINNED_OBSERVATIONS].append(obs)
                     st.rerun()
     else:
         st.caption("No observations yet")

@@ -2,7 +2,12 @@
 
 import streamlit as st
 
-from config.constants import OPTIMAL_COLS_THRESHOLD
+from config.constants import (
+    OPTIMAL_COLS_THRESHOLD,
+    SELECTION_COLORS,
+    STATE_SELECTED_NOTES,
+    UNSELECTED_COLOR,
+)
 
 
 def render_step_selector(edo: int, selected_notes: list[int], num_notes: int) -> None:
@@ -17,7 +22,7 @@ def render_step_selector(edo: int, selected_notes: list[int], num_notes: int) ->
     st.caption(f"Step range: 0-{edo - 1} ({edo}-EDO)")
 
     # 最適な列数を計算(視認性と操作性のバランス)
-    optimal_cols = 10 if edo > OPTIMAL_COLS_THRESHOLD else min(OPTIMAL_COLS_THRESHOLD, edo)
+    optimal_cols = 21 if edo > OPTIMAL_COLS_THRESHOLD else min(OPTIMAL_COLS_THRESHOLD, edo)
     num_rows = (edo + optimal_cols - 1) // optimal_cols
 
     # グリッド生成: 各行を処理
@@ -39,12 +44,12 @@ def render_step_selector(edo: int, selected_notes: list[int], num_notes: int) ->
                 ):
                     # トグル処理
                     if is_selected:
-                        st.session_state.selected_notes.remove(idx)
+                        st.session_state[STATE_SELECTED_NOTES].remove(idx)
                     else:
                         # 上限到達時は最後の音を置き換え
-                        if len(st.session_state.selected_notes) >= num_notes:
-                            st.session_state.selected_notes.pop(-1)
-                        st.session_state.selected_notes.append(idx)
+                        if len(st.session_state[STATE_SELECTED_NOTES]) >= num_notes:
+                            st.session_state[STATE_SELECTED_NOTES].pop(-1)
+                        st.session_state[STATE_SELECTED_NOTES].append(idx)
                     st.rerun()
 
 
@@ -67,10 +72,9 @@ def render_selection_status(edo: int, selected_notes: list[int]) -> None:
                 if i in selected_notes:
                     order = sorted_notes.index(i)
                     # カラーマップで順序を表現
-                    colors = ["🔴", "🟡", "🟢", "🔵", "🟣", "🟠"]
-                    st.markdown(f"{colors[order % len(colors)]}")
+                    st.markdown(f"{SELECTION_COLORS[order % len(SELECTION_COLORS)]}")
                 else:
-                    st.markdown("⚪")
+                    st.markdown(UNSELECTED_COLOR)
 
     else:
         st.info("↑ Please select steps")

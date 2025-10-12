@@ -2,7 +2,14 @@
 
 import streamlit as st
 
-from config.constants import DEFAULT_NUM_NOTES, EDO_OPTIONS, NUM_NOTES_OPTIONS
+from config.constants import (
+    DEFAULT_NUM_NOTES,
+    EDO_OPTIONS,
+    NUM_NOTES_OPTIONS,
+    STATE_EDO,
+    STATE_NUM_NOTES,
+    STATE_SELECTED_NOTES,
+)
 
 
 def render_sidebar() -> tuple[int, int]:
@@ -26,9 +33,9 @@ def render_sidebar() -> tuple[int, int]:
         st.caption(f"Frequency ratio: 2^(k/{new_edo}), k ∈ [0, {new_edo})")
 
         # EDO変更時: 選択音をクリア
-        if new_edo != st.session_state.edo:
-            st.session_state.edo = new_edo
-            st.session_state.selected_notes = []
+        if new_edo != st.session_state[STATE_EDO]:
+            st.session_state[STATE_EDO] = new_edo
+            st.session_state[STATE_SELECTED_NOTES] = []
 
         st.divider()
 
@@ -41,9 +48,10 @@ def render_sidebar() -> tuple[int, int]:
         )
 
         # 構成音数変更時: 選択音を調整
-        if new_num_notes != st.session_state.num_notes:
-            st.session_state.num_notes = new_num_notes
-            if len(st.session_state.selected_notes) > new_num_notes:
-                st.session_state.selected_notes = st.session_state.selected_notes[:new_num_notes]
+        if new_num_notes != st.session_state[STATE_NUM_NOTES]:
+            st.session_state[STATE_NUM_NOTES] = new_num_notes
+            if len(st.session_state[STATE_SELECTED_NOTES]) > new_num_notes:
+                current_notes = st.session_state[STATE_SELECTED_NOTES]
+                st.session_state[STATE_SELECTED_NOTES] = current_notes[:new_num_notes]
 
     return new_edo, new_num_notes
