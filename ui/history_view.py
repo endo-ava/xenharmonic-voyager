@@ -39,10 +39,12 @@ def get_all_observations() -> list[dict]:
         {"obs": obs, "is_pinned": True, "pin_idx": idx}
         for idx, obs in enumerate(st.session_state[STATE_PINNED_OBSERVATIONS])
     ]
+    # Use set for O(1) lookup performance
+    pinned_set = set(st.session_state[STATE_PINNED_OBSERVATIONS])
     unpinned = [
         {"obs": obs, "is_pinned": False, "history_idx": idx}
         for idx, obs in enumerate(reversed(st.session_state[STATE_OBSERVATION_HISTORY]))
-        if obs not in st.session_state[STATE_PINNED_OBSERVATIONS]
+        if obs not in pinned_set
     ]
     return pinned + unpinned
 

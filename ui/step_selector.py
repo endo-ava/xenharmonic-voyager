@@ -6,6 +6,7 @@ from config.constants import (
     OPTIMAL_COLS_THRESHOLD,
     SELECTION_COLORS,
     STATE_SELECTED_NOTES,
+    STEP_SELECTOR_WIDE_COLS,
     UNSELECTED_COLOR,
 )
 
@@ -22,7 +23,11 @@ def render_step_selector(edo: int, selected_notes: list[int], num_notes: int) ->
     st.caption(f"Step range: 0-{edo - 1} ({edo}-EDO)")
 
     # 最適な列数を計算(視認性と操作性のバランス)
-    optimal_cols = 21 if edo > OPTIMAL_COLS_THRESHOLD else min(OPTIMAL_COLS_THRESHOLD, edo)
+    optimal_cols = (
+        STEP_SELECTOR_WIDE_COLS
+        if edo > OPTIMAL_COLS_THRESHOLD
+        else min(OPTIMAL_COLS_THRESHOLD, edo)
+    )
     num_rows = (edo + optimal_cols - 1) // optimal_cols
 
     # グリッド生成: 各行を処理

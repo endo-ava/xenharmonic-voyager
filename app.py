@@ -63,6 +63,18 @@ def initialize_session_state() -> None:
 # ===== Initialize =====
 initialize_session_state()
 
+# Calculate reference scores at startup (once only)
+if st.session_state[STATE_REFERENCE_SCORE] is None:
+    st.session_state[STATE_REFERENCE_SCORE] = calculate_consonance(
+        edo=12,
+        notes=REF_CHORD_MAJOR_TRIAD,
+    )
+if st.session_state[STATE_MAX_SCORE] is None:
+    st.session_state[STATE_MAX_SCORE] = calculate_consonance(
+        edo=12,
+        notes=REF_CHORD_MINOR_SECOND,
+    )
+
 # ===== Title and Description =====
 st.title("Xenharmonic Voyager")
 st.markdown(
@@ -87,20 +99,6 @@ if len(st.session_state[STATE_SELECTED_NOTES]) == num_notes:
             edo=st.session_state[STATE_EDO],
             notes=st.session_state[STATE_SELECTED_NOTES],
         )
-
-        # 基準値の計算 (初回のみ)
-        if st.session_state[STATE_REFERENCE_SCORE] is None:
-            st.session_state[STATE_REFERENCE_SCORE] = calculate_consonance(
-                edo=12,
-                notes=REF_CHORD_MAJOR_TRIAD,
-            )
-
-        # 最大値の計算 (初回のみ)
-        if st.session_state[STATE_MAX_SCORE] is None:
-            st.session_state[STATE_MAX_SCORE] = calculate_consonance(
-                edo=12,
-                notes=REF_CHORD_MINOR_SECOND,
-            )
 
         # Render analysis results
         render_analysis_view(current_roughness)

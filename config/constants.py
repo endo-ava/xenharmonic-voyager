@@ -21,6 +21,7 @@ EDO_OPTIONS = [12, 19, 31, 41, 53]
 NUM_NOTES_OPTIONS = [2, 3, 4, 5]
 DEFAULT_NUM_NOTES = 3
 OPTIMAL_COLS_THRESHOLD = 12
+STEP_SELECTOR_WIDE_COLS = 21  # Number of columns for large EDOs
 
 
 # ===== Session State Keys =====
