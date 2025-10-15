@@ -11,11 +11,15 @@
 """
 
 from dataclasses import dataclass
-from itertools import combinations
 
-from src.acoustics.roughness import calculate_roughness_pair
+from src.acoustics.roughness import (
+    calculate_dissonance_curve,
+    calculate_roughness_pair,
+    critical_bandwidth,
+)
 from src.domain.harmonics import Harmonic, TimbreModel
 from src.domain.tuning import TuningSystem
+from ui.models import HarmonicPairData
 
 
 @dataclass(frozen=True)
@@ -28,12 +32,15 @@ class ConsonanceResult:
         num_notes: 和音の音符数
         num_harmonic_pairs: 比較された倍音ペアの総数
         tuning_system: 使用されたN-EDOチューニングシステム(参照用)
+        pair_details: 各倍音ペアの詳細情報（グラフ描画用）。
+                     Noneの場合は詳細情報なし。
     """
 
     total_roughness: float
     num_notes: int
     num_harmonic_pairs: int
     tuning_system: TuningSystem
+    pair_details: list[HarmonicPairData] | None = None
 
 
 class ConsonanceCalculator:
@@ -82,7 +89,9 @@ class ConsonanceCalculator:
         self._timbre_model = timbre_model
         self._num_harmonics = num_harmonics
 
-    def calculate_consonance(self, chord_steps: list[int]) -> ConsonanceResult:
+    def calculate_consonance(
+        self, chord_steps: list[int], *, include_pair_details: bool = False
+    ) -> ConsonanceResult:
         """N-EDOステップとして与えられた和音の協和性スコアを計算します。
 
         これは、計算全体を調整する主要な公開メソッドです。
@@ -92,10 +101,12 @@ class ConsonanceCalculator:
         2. 各音符の倍音系列を生成
         3. すべてのペアワイズ倍音の組み合わせに対してラフネスを計算
         4. ラフネス値を合計して総不協和度を取得
+        5. (オプション) グラフ描画用の詳細ペアデータを生成
 
         Args:
             chord_steps: 和音を表すN-EDOステップ番号のリスト。
                         例: 12-EDOの長三和音の場合は [0, 4, 7]
+            include_pair_details: Trueの場合、各倍音ペアの詳細情報を含める（グラフ描画用）
 
         Returns:
             総ラフネスとメタデータを含むConsonanceResult
@@ -112,6 +123,12 @@ class ConsonanceCalculator:
             >>> result = calculator.calculate_consonance([0, 12])  # Octave
             >>> result.total_roughness < 0.1  # オクターブは協和的であるべき
             True
+            >>> # グラフ用の詳細データを含める
+            >>> result_with_details = calculator.calculate_consonance(
+            ...     [0, 7], include_pair_details=True
+            ... )
+            >>> len(result_with_details.pair_details)  # ペア詳細が含まれる
+            190
         """
         if not chord_steps:
             msg = "chord_stepsを空にすることはできません"
@@ -128,23 +145,58 @@ class ConsonanceCalculator:
             for freq in fundamentals
         ]
 
-        # ステップ3:すべての音符からのすべての倍音をフラットなリストに収集
-        all_harmonics: list[Harmonic] = [
-            harmonic for series in harmonic_series_list for harmonic in series.harmonics
-        ]
+        # ステップ3:すべての音符からのすべての倍音をフラットなリストに収集 (メタデータ付き)
+        all_harmonics_with_meta: list[tuple[int, int, Harmonic]] = []
+        for note_idx, series in enumerate(harmonic_series_list):
+            for harm_num, harmonic in enumerate(series.harmonics, start=1):
+                all_harmonics_with_meta.append((note_idx, harm_num, harmonic))
 
         # ステップ4:すべてのユニークな倍音ペアに対してペアワイズラフネスを計算
-        harmonic_pairs = combinations(all_harmonics, 2)
-        total_roughness = sum(calculate_roughness_pair(h1, h2) for h1, h2 in harmonic_pairs)
+        total_roughness = 0.0
+        pair_details_list: list[HarmonicPairData] | None = [] if include_pair_details else None
+
+        for i in range(len(all_harmonics_with_meta)):
+            for j in range(i + 1, len(all_harmonics_with_meta)):
+                note_idx1, harm_num1, harmonic1 = all_harmonics_with_meta[i]
+                note_idx2, harm_num2, harmonic2 = all_harmonics_with_meta[j]
+
+                # ラフネスを計算
+                roughness = calculate_roughness_pair(harmonic1, harmonic2)
+                total_roughness += roughness
+
+                # 詳細データが必要な場合は生成
+                if include_pair_details and pair_details_list is not None:
+                    freq_diff = abs(harmonic2.frequency - harmonic1.frequency)
+                    min_freq = min(harmonic1.frequency, harmonic2.frequency)
+                    cb = critical_bandwidth(min_freq)
+                    normalized_freq_diff = freq_diff / cb
+                    dissonance_value = calculate_dissonance_curve(freq_diff, cb)
+
+                    pair_data = HarmonicPairData(
+                        freq1=harmonic1.frequency,
+                        freq2=harmonic2.frequency,
+                        amp1=harmonic1.amplitude,
+                        amp2=harmonic2.amplitude,
+                        normalized_freq_diff=normalized_freq_diff,
+                        dissonance_value=dissonance_value,
+                        roughness_contribution=roughness,
+                        is_self_interference=(note_idx1 == note_idx2),
+                        note_index1=note_idx1,
+                        note_index2=note_idx2,
+                        harmonic_number1=harm_num1,
+                        harmonic_number2=harm_num2,
+                    )
+                    pair_details_list.append(pair_data)
 
         # num_pairs: C(n, 2) = n * (n - 1) / 2
-        num_pairs = (len(all_harmonics) * (len(all_harmonics) - 1)) // 2
+        num_pairs = (len(all_harmonics_with_meta) * (len(all_harmonics_with_meta) - 1)) // 2
 
         return ConsonanceResult(
             total_roughness=total_roughness,
             num_notes=len(chord_steps),
             num_harmonic_pairs=num_pairs,
             tuning_system=self._tuning_system,
+            pair_details=pair_details_list,
         )
 
     @property

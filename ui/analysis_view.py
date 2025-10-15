@@ -57,7 +57,7 @@ def render_analysis_view(roughness: float) -> None:
         st.metric(
             label="R(S)",
             value=f"{roughness:.6f}",
-            help="音響的ラフネス関数の値",
+            help="音響的ラフネス関数の値。値が小さいほど協和的。",
         )
 
     with col2:
