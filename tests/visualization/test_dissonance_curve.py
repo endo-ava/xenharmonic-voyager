@@ -1,13 +1,17 @@
 """ディソナンス曲線グラフ生成モジュールのテスト"""
 
+from dataclasses import FrozenInstanceError
+
 import numpy as np
 import pytest
 from plotly.graph_objects import Figure
 
 from src.calculator import calculate_consonance_with_details
 from src.visualization.dissonance_curve import (
+    DissonanceCurveViewModel,
     create_dissonance_curve_graph,
     generate_dissonance_curve_data,
+    prepare_dissonance_curve_view_model,
 )
 
 
@@ -56,6 +60,72 @@ class TestGenerateDissonanceCurveData:
         # ピーク後の値がピーク値より小さいことを確認
         if peak_idx < len(g_vals) - 50:
             assert g_vals[peak_idx + 50] < g_vals[peak_idx]
+
+
+class TestPrepareDissonanceCurveViewModel:
+    """prepare_dissonance_curve_view_model関数のテスト"""
+
+    def test_returns_none_for_empty_pair_details(self):
+        """空のペア詳細に対してNoneを返すことを確認"""
+        vm = prepare_dissonance_curve_view_model(None)
+        assert vm is None
+
+        vm = prepare_dissonance_curve_view_model([])
+        assert vm is None
+
+    def test_creates_valid_view_model(self):
+        """有効なViewModelを作成することを確認"""
+        result = calculate_consonance_with_details(edo=12, notes=[0, 4, 7], num_harmonics=10)
+
+        vm = prepare_dissonance_curve_view_model(result.pair_details)
+
+        assert vm is not None
+        assert isinstance(vm, DissonanceCurveViewModel)
+        assert isinstance(vm.fig, Figure)
+        assert vm.total_pairs == 435  # C(30, 2)
+        assert vm.displayed_pairs > 0
+        assert vm.displayed_pairs <= vm.total_pairs
+
+    def test_filtering_reduces_displayed_pairs(self):
+        """フィルタリングにより表示ペア数が減少することを確認"""
+        result = calculate_consonance_with_details(edo=12, notes=[0, 4, 7], num_harmonics=10)
+
+        # 閾値を高くすると表示ペア数が減る
+        vm_low_threshold = prepare_dissonance_curve_view_model(
+            result.pair_details, filter_threshold=0.001
+        )
+        vm_high_threshold = prepare_dissonance_curve_view_model(
+            result.pair_details, filter_threshold=0.01
+        )
+
+        assert vm_low_threshold is not None
+        assert vm_high_threshold is not None
+        assert vm_high_threshold.displayed_pairs < vm_low_threshold.displayed_pairs
+
+    def test_statistics_are_consistent(self):
+        """統計情報の一貫性を確認"""
+        result = calculate_consonance_with_details(edo=12, notes=[0, 4, 7], num_harmonics=10)
+
+        vm = prepare_dissonance_curve_view_model(result.pair_details)
+
+        assert vm is not None
+        # フィルタリング前の統計
+        assert vm.total_pairs == vm.self_interference_all + vm.mutual_interference_all
+        # フィルタリング後の統計
+        assert vm.displayed_pairs == vm.self_interference_filtered + vm.mutual_interference_filtered
+        # フィルタリング後はフィルタリング前以下
+        assert vm.self_interference_filtered <= vm.self_interference_all
+        assert vm.mutual_interference_filtered <= vm.mutual_interference_all
+
+    def test_view_model_is_immutable(self):
+        """ViewModelが不変であることを確認"""
+        result = calculate_consonance_with_details(edo=12, notes=[0, 4, 7], num_harmonics=10)
+
+        vm = prepare_dissonance_curve_view_model(result.pair_details)
+
+        assert vm is not None
+        with pytest.raises(FrozenInstanceError):  # dataclass(frozen=True)によるエラー
+            vm.total_pairs = 999  # type: ignore
 
 
 class TestIntegration:

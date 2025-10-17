@@ -1,9 +1,17 @@
-"""ui/history_view.pyの純粋関数のテスト"""
+"""src/visualization/history_presenter.py の純粋関数のテスト"""
 
 from unittest.mock import MagicMock
 
 from config.constants import MAX_HISTORY_SIZE, STATE_OBSERVATION_HISTORY, STATE_PINNED_OBSERVATIONS
-from ui.history_view import get_all_observations, record_observation
+from src.visualization.history_presenter import (
+    HistoryViewModel,
+    ObservationItemViewModel,
+    get_all_observations,
+    pin_observation,
+    prepare_history_view_model,
+    record_observation,
+    unpin_observation,
+)
 from ui.models import Observation
 
 
@@ -15,7 +23,7 @@ class TestRecordObservation:
         # モック設定
         mock_st = MagicMock()
         mock_st.session_state = {STATE_OBSERVATION_HISTORY: []}
-        monkeypatch.setattr("ui.history_view.st", mock_st)
+        monkeypatch.setattr("src.visualization.history_presenter.st", mock_st)
 
         # 実行
         record_observation(edo=12, notes=[0, 4, 7], roughness=0.5)
@@ -32,7 +40,7 @@ class TestRecordObservation:
         mock_st.session_state = {
             STATE_OBSERVATION_HISTORY: [Observation(edo=12, notes=(0, 4, 7), roughness=0.5)]
         }
-        monkeypatch.setattr("ui.history_view.st", mock_st)
+        monkeypatch.setattr("src.visualization.history_presenter.st", mock_st)
 
         # 実行
         record_observation(edo=19, notes=[0, 6, 11], roughness=0.3)
@@ -48,7 +56,7 @@ class TestRecordObservation:
         mock_st = MagicMock()
         existing_obs = Observation(edo=12, notes=(0, 4, 7), roughness=0.5)
         mock_st.session_state = {STATE_OBSERVATION_HISTORY: [existing_obs]}
-        monkeypatch.setattr("ui.history_view.st", mock_st)
+        monkeypatch.setattr("src.visualization.history_presenter.st", mock_st)
 
         # 実行(同じ値を追加しようとする)
         record_observation(edo=12, notes=[0, 4, 7], roughness=0.5)
@@ -68,7 +76,7 @@ class TestRecordObservation:
                 Observation(edo=19, notes=(0, 6, 11), roughness=0.3),
             ]
         }
-        monkeypatch.setattr("ui.history_view.st", mock_st)
+        monkeypatch.setattr("src.visualization.history_presenter.st", mock_st)
 
         # 実行: 履歴の最初と同じだが、直前とは異なる観測
         record_observation(edo=12, notes=[0, 4, 7], roughness=0.5)
@@ -87,7 +95,7 @@ class TestRecordObservation:
                 Observation(edo=i, notes=(0,), roughness=float(i)) for i in range(MAX_HISTORY_SIZE)
             ]
         }
-        monkeypatch.setattr("ui.history_view.st", mock_st)
+        monkeypatch.setattr("src.visualization.history_presenter.st", mock_st)
 
         # 実行: 新しい観測を追加
         record_observation(edo=999, notes=[0, 1], roughness=99.9)
@@ -105,7 +113,7 @@ class TestRecordObservation:
         # モック設定
         mock_st = MagicMock()
         mock_st.session_state = {STATE_OBSERVATION_HISTORY: []}
-        monkeypatch.setattr("ui.history_view.st", mock_st)
+        monkeypatch.setattr("src.visualization.history_presenter.st", mock_st)
 
         # 実行: listを渡す
         record_observation(edo=12, notes=[0, 4, 7], roughness=0.5)
@@ -120,7 +128,7 @@ class TestRecordObservation:
         # モック設定
         mock_st = MagicMock()
         mock_st.session_state = {STATE_OBSERVATION_HISTORY: []}
-        monkeypatch.setattr("ui.history_view.st", mock_st)
+        monkeypatch.setattr("src.visualization.history_presenter.st", mock_st)
 
         # 実行
         record_observation(edo=12, notes=[], roughness=0.0)
@@ -142,7 +150,7 @@ class TestGetAllObservations:
             STATE_OBSERVATION_HISTORY: [],
             STATE_PINNED_OBSERVATIONS: [],
         }
-        monkeypatch.setattr("ui.history_view.st", mock_st)
+        monkeypatch.setattr("src.visualization.history_presenter.st", mock_st)
 
         # 実行
         result = get_all_observations()
@@ -159,7 +167,7 @@ class TestGetAllObservations:
             STATE_OBSERVATION_HISTORY: [],
             STATE_PINNED_OBSERVATIONS: [pinned_obs],
         }
-        monkeypatch.setattr("ui.history_view.st", mock_st)
+        monkeypatch.setattr("src.visualization.history_presenter.st", mock_st)
 
         # 実行
         result = get_all_observations()
@@ -179,7 +187,7 @@ class TestGetAllObservations:
             STATE_OBSERVATION_HISTORY: [history_obs],
             STATE_PINNED_OBSERVATIONS: [],
         }
-        monkeypatch.setattr("ui.history_view.st", mock_st)
+        monkeypatch.setattr("src.visualization.history_presenter.st", mock_st)
 
         # 実行
         result = get_all_observations()
@@ -200,7 +208,7 @@ class TestGetAllObservations:
             STATE_OBSERVATION_HISTORY: [history_obs],
             STATE_PINNED_OBSERVATIONS: [pinned_obs],
         }
-        monkeypatch.setattr("ui.history_view.st", mock_st)
+        monkeypatch.setattr("src.visualization.history_presenter.st", mock_st)
 
         # 実行
         result = get_all_observations()
@@ -220,7 +228,7 @@ class TestGetAllObservations:
             STATE_OBSERVATION_HISTORY: [shared_obs, history_only_obs],
             STATE_PINNED_OBSERVATIONS: [shared_obs],
         }
-        monkeypatch.setattr("ui.history_view.st", mock_st)
+        monkeypatch.setattr("src.visualization.history_presenter.st", mock_st)
 
         # 実行
         result = get_all_observations()
@@ -243,7 +251,7 @@ class TestGetAllObservations:
             STATE_OBSERVATION_HISTORY: [obs1, obs2, obs3],
             STATE_PINNED_OBSERVATIONS: [],
         }
-        monkeypatch.setattr("ui.history_view.st", mock_st)
+        monkeypatch.setattr("src.visualization.history_presenter.st", mock_st)
 
         # 実行
         result = get_all_observations()
@@ -264,7 +272,7 @@ class TestGetAllObservations:
             STATE_OBSERVATION_HISTORY: [],
             STATE_PINNED_OBSERVATIONS: [pinned1, pinned2],
         }
-        monkeypatch.setattr("ui.history_view.st", mock_st)
+        monkeypatch.setattr("src.visualization.history_presenter.st", mock_st)
 
         # 実行
         result = get_all_observations()
@@ -284,7 +292,7 @@ class TestGetAllObservations:
             STATE_OBSERVATION_HISTORY: [obs1, obs2],
             STATE_PINNED_OBSERVATIONS: [],
         }
-        monkeypatch.setattr("ui.history_view.st", mock_st)
+        monkeypatch.setattr("src.visualization.history_presenter.st", mock_st)
 
         # 実行
         result = get_all_observations()
@@ -292,3 +300,191 @@ class TestGetAllObservations:
         # 検証: 逆順なので、obs2がhistory_idx=0、obs1がhistory_idx=1
         assert result[0]["history_idx"] == 0  # obs2(最新)
         assert result[1]["history_idx"] == 1  # obs1(古い)
+
+
+class TestPrepareHistoryViewModel:
+    """prepare_history_view_model関数のテスト"""
+
+    def test_creates_valid_view_model(self, monkeypatch):
+        """有効なViewModelを作成する"""
+        # モック設定
+        mock_st = MagicMock()
+        obs1 = Observation(edo=12, notes=(0, 4, 7), roughness=0.5)
+        obs2 = Observation(edo=19, notes=(0, 6, 11), roughness=0.3)
+        mock_st.session_state = {
+            STATE_OBSERVATION_HISTORY: [obs1, obs2],
+            STATE_PINNED_OBSERVATIONS: [],
+        }
+        monkeypatch.setattr("src.visualization.history_presenter.st", mock_st)
+
+        # 実行
+        vm = prepare_history_view_model()
+
+        # 検証
+        assert isinstance(vm, HistoryViewModel)
+        assert len(vm.items) == 2
+        assert all(isinstance(item, ObservationItemViewModel) for item in vm.items)
+
+    def test_empty_history_creates_empty_view_model(self, monkeypatch):
+        """空の履歴で空のViewModelを作成"""
+        # モック設定
+        mock_st = MagicMock()
+        mock_st.session_state = {
+            STATE_OBSERVATION_HISTORY: [],
+            STATE_PINNED_OBSERVATIONS: [],
+        }
+        monkeypatch.setattr("src.visualization.history_presenter.st", mock_st)
+
+        # 実行
+        vm = prepare_history_view_model()
+
+        # 検証
+        assert isinstance(vm, HistoryViewModel)
+        assert len(vm.items) == 0
+
+    def test_view_model_items_have_correct_structure(self, monkeypatch):
+        """ViewModelのアイテムが正しい構造を持つ"""
+        # モック設定
+        mock_st = MagicMock()
+        obs = Observation(edo=12, notes=(0, 4, 7), roughness=0.5)
+        mock_st.session_state = {
+            STATE_OBSERVATION_HISTORY: [obs],
+            STATE_PINNED_OBSERVATIONS: [],
+        }
+        monkeypatch.setattr("src.visualization.history_presenter.st", mock_st)
+
+        # 実行
+        vm = prepare_history_view_model()
+
+        # 検証
+        item = vm.items[0]
+        assert item.obs == obs
+        assert item.is_pinned is False
+        assert isinstance(item.index, int)
+
+
+class TestPinObservation:
+    """pin_observation関数のテスト"""
+
+    def test_pin_to_empty_list(self, monkeypatch):
+        """空のピン留めリストに観測を追加"""
+        # モック設定
+        mock_st = MagicMock()
+        mock_st.session_state = {STATE_PINNED_OBSERVATIONS: []}
+        monkeypatch.setattr("src.visualization.history_presenter.st", mock_st)
+
+        # 実行
+        obs = Observation(edo=12, notes=(0, 4, 7), roughness=0.5)
+        pin_observation(obs)
+
+        # 検証
+        pinned = mock_st.session_state[STATE_PINNED_OBSERVATIONS]
+        assert len(pinned) == 1
+        assert pinned[0] == obs
+
+    def test_pin_multiple_observations(self, monkeypatch):
+        """複数の観測をピン留め"""
+        # モック設定
+        mock_st = MagicMock()
+        obs1 = Observation(edo=12, notes=(0, 4, 7), roughness=0.5)
+        mock_st.session_state = {STATE_PINNED_OBSERVATIONS: [obs1]}
+        monkeypatch.setattr("src.visualization.history_presenter.st", mock_st)
+
+        # 実行
+        obs2 = Observation(edo=19, notes=(0, 6, 11), roughness=0.3)
+        pin_observation(obs2)
+
+        # 検証
+        pinned = mock_st.session_state[STATE_PINNED_OBSERVATIONS]
+        assert len(pinned) == 2
+        assert pinned[0] == obs1
+        assert pinned[1] == obs2
+
+    def test_pin_duplicate_observation(self, monkeypatch):
+        """同じ観測を複数回ピン留めできる(重複チェックなし)"""
+        # モック設定
+        mock_st = MagicMock()
+        obs = Observation(edo=12, notes=(0, 4, 7), roughness=0.5)
+        mock_st.session_state = {STATE_PINNED_OBSERVATIONS: [obs]}
+        monkeypatch.setattr("src.visualization.history_presenter.st", mock_st)
+
+        # 実行: 同じ観測をピン留め
+        pin_observation(obs)
+
+        # 検証: 重複してピン留めされる
+        pinned = mock_st.session_state[STATE_PINNED_OBSERVATIONS]
+        assert len(pinned) == 2
+        assert pinned[0] == obs
+        assert pinned[1] == obs
+
+
+class TestUnpinObservation:
+    """unpin_observation関数のテスト"""
+
+    def test_unpin_single_observation(self, monkeypatch):
+        """単一のピン留めを解除"""
+        # モック設定
+        mock_st = MagicMock()
+        obs = Observation(edo=12, notes=(0, 4, 7), roughness=0.5)
+        mock_st.session_state = {STATE_PINNED_OBSERVATIONS: [obs]}
+        monkeypatch.setattr("src.visualization.history_presenter.st", mock_st)
+
+        # 実行
+        unpin_observation(0)
+
+        # 検証
+        pinned = mock_st.session_state[STATE_PINNED_OBSERVATIONS]
+        assert len(pinned) == 0
+
+    def test_unpin_from_multiple_observations(self, monkeypatch):
+        """複数のピン留めから1つを解除"""
+        # モック設定
+        mock_st = MagicMock()
+        obs1 = Observation(edo=12, notes=(0, 4, 7), roughness=0.5)
+        obs2 = Observation(edo=19, notes=(0, 6, 11), roughness=0.3)
+        obs3 = Observation(edo=31, notes=(0, 10, 18), roughness=0.2)
+        mock_st.session_state = {STATE_PINNED_OBSERVATIONS: [obs1, obs2, obs3]}
+        monkeypatch.setattr("src.visualization.history_presenter.st", mock_st)
+
+        # 実行: 中央の要素を解除
+        unpin_observation(1)
+
+        # 検証
+        pinned = mock_st.session_state[STATE_PINNED_OBSERVATIONS]
+        assert len(pinned) == 2
+        assert pinned[0] == obs1
+        assert pinned[1] == obs3
+
+    def test_unpin_first_observation(self, monkeypatch):
+        """最初のピン留めを解除"""
+        # モック設定
+        mock_st = MagicMock()
+        obs1 = Observation(edo=12, notes=(0,), roughness=0.1)
+        obs2 = Observation(edo=19, notes=(1,), roughness=0.2)
+        mock_st.session_state = {STATE_PINNED_OBSERVATIONS: [obs1, obs2]}
+        monkeypatch.setattr("src.visualization.history_presenter.st", mock_st)
+
+        # 実行
+        unpin_observation(0)
+
+        # 検証
+        pinned = mock_st.session_state[STATE_PINNED_OBSERVATIONS]
+        assert len(pinned) == 1
+        assert pinned[0] == obs2
+
+    def test_unpin_last_observation(self, monkeypatch):
+        """最後のピン留めを解除"""
+        # モック設定
+        mock_st = MagicMock()
+        obs1 = Observation(edo=12, notes=(0,), roughness=0.1)
+        obs2 = Observation(edo=19, notes=(1,), roughness=0.2)
+        mock_st.session_state = {STATE_PINNED_OBSERVATIONS: [obs1, obs2]}
+        monkeypatch.setattr("src.visualization.history_presenter.st", mock_st)
+
+        # 実行
+        unpin_observation(1)
+
+        # 検証
+        pinned = mock_st.session_state[STATE_PINNED_OBSERVATIONS]
+        assert len(pinned) == 1
+        assert pinned[0] == obs1
