@@ -157,7 +157,8 @@ def create_dissonance_curve_graph(
             arrowcolor="orange",
             ax=40,
             ay=-40,
-            bgcolor="rgba(255, 255, 255, 0.8)",
+            bgcolor="rgba(255, 255, 255, 0.9)",
+            font={"color": "black"},
             bordercolor="orange",
             borderwidth=1,
         )
@@ -236,7 +237,12 @@ def create_dissonance_curve_graph(
         yaxis_title="Dissonance g(x)",
         hovermode="closest",
         showlegend=True,
-        legend={"x": 0.7, "y": 0.98, "bgcolor": "rgba(255, 255, 255, 0.8)"},
+        legend={
+            "x": 0.7,
+            "y": 0.98,
+            "bgcolor": "rgba(255, 255, 255, 0.9)",
+            "font": {"color": "black"},
+        },
         plot_bgcolor="white",
         xaxis={
             "gridcolor": "lightgray",

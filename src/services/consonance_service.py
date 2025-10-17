@@ -12,11 +12,7 @@
 
 from dataclasses import dataclass
 
-from src.acoustics.roughness import (
-    calculate_dissonance_curve,
-    calculate_roughness_pair,
-    critical_bandwidth,
-)
+from src.acoustics.roughness import calculate_roughness_pair
 from src.domain.harmonics import Harmonic, TimbreModel
 from src.domain.tuning import TuningSystem
 from src.visualization.models import HarmonicPairData
@@ -160,26 +156,20 @@ class ConsonanceCalculator:
                 note_idx1, harm_num1, harmonic1 = all_harmonics_with_meta[i]
                 note_idx2, harm_num2, harmonic2 = all_harmonics_with_meta[j]
 
-                # ラフネスを計算
-                roughness = calculate_roughness_pair(harmonic1, harmonic2)
-                total_roughness += roughness
+                # ラフネスを計算 (RoughnessPairResultを取得)
+                result = calculate_roughness_pair(harmonic1, harmonic2)
+                total_roughness += result.roughness
 
                 # 詳細データが必要な場合は生成
                 if include_pair_details and pair_details_list is not None:
-                    freq_diff = abs(harmonic2.frequency - harmonic1.frequency)
-                    min_freq = min(harmonic1.frequency, harmonic2.frequency)
-                    cb = critical_bandwidth(min_freq)
-                    normalized_freq_diff = freq_diff / cb
-                    dissonance_value = calculate_dissonance_curve(freq_diff, cb)
-
                     pair_data = HarmonicPairData(
                         freq1=harmonic1.frequency,
                         freq2=harmonic2.frequency,
                         amp1=harmonic1.amplitude,
                         amp2=harmonic2.amplitude,
-                        normalized_freq_diff=normalized_freq_diff,
-                        dissonance_value=dissonance_value,
-                        roughness_contribution=roughness,
+                        normalized_freq_diff=result.normalized_freq_diff,
+                        dissonance_value=result.dissonance_value,
+                        roughness_contribution=result.roughness,
                         is_self_interference=(note_idx1 == note_idx2),
                         note_index1=note_idx1,
                         note_index2=note_idx2,
