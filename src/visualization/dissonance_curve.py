@@ -1,7 +1,10 @@
-"""ディソナンス曲線グラフ生成モジュール
+"""ディソナンス曲線グラフ生成モジュール (Presenter層)
 
 Setharesのディソナンス曲線 g(x) = exp(-b1*x) - exp(-b2*x) を可視化し、
 現在の和音の倍音ペアをプロット表示します。
+
+このモジュールは、データフィルタリング、統計計算、グラフ生成のロジックを担当し、
+ViewModelを準備してView層に渡します。
 
 References:
     - Sethares, W. A. (1993). "Local consonance and the relationship between
@@ -9,13 +12,38 @@ References:
     - docs/70.knowledge/7004.visualization-ideas.md
 """
 
+from dataclasses import dataclass
+
 import numpy as np
 import plotly.graph_objects as go
 from plotly.graph_objects import Figure
 
 from src.acoustics.roughness import calculate_dissonance_curve
 from src.constants import ROUGHNESS_B1, ROUGHNESS_B2
-from ui.models import HarmonicPairData
+from src.visualization.models import HarmonicPairData
+
+
+@dataclass(frozen=True)
+class DissonanceCurveViewModel:
+    """ディソナンス曲線ビューの表示用データモデル
+
+    Attributes:
+        fig: Plotlyで生成されたグラフオブジェクト
+        total_pairs: フィルタリング前の総ペア数
+        displayed_pairs: フィルタリング後の表示ペア数
+        self_interference_all: 全ペア中の自己干渉ペア数
+        self_interference_filtered: 表示中の自己干渉ペア数
+        mutual_interference_all: 全ペア中の相互干渉ペア数
+        mutual_interference_filtered: 表示中の相互干渉ペア数
+    """
+
+    fig: Figure
+    total_pairs: int
+    displayed_pairs: int
+    self_interference_all: int
+    self_interference_filtered: int
+    mutual_interference_all: int
+    mutual_interference_filtered: int
 
 
 def generate_dissonance_curve_data(
@@ -228,3 +256,57 @@ def create_dissonance_curve_graph(
     )
 
     return fig
+
+
+def prepare_dissonance_curve_view_model(
+    pair_details: list[HarmonicPairData] | None,
+    filter_threshold: float = 0.001,
+) -> DissonanceCurveViewModel | None:
+    """ディソナンス曲線ViewModelを準備します。
+
+    フィルタリング、統計計算、グラフ生成をすべて実行し、
+    UI表示用のViewModelを返します。
+
+    Args:
+        pair_details: 事前計算された倍音ペア詳細データ
+        filter_threshold: フィルタリング閾値（総ラフネスに対する割合）
+
+    Returns:
+        DissonanceCurveViewModel | None: 準備されたViewModel、
+                                         データ不足の場合はNone
+
+    Examples:
+        >>> result = calculate_consonance_with_details(edo=12, notes=[0, 4, 7])
+        >>> vm = prepare_dissonance_curve_view_model(result.pair_details)
+        >>> if vm:
+        ...     print(f"Total: {vm.total_pairs}, Displayed: {vm.displayed_pairs}")
+    """
+    if not pair_details:
+        return None
+
+    # フィルタリング前の統計 (全ペアデータ)
+    total_pairs = len(pair_details)
+    self_interference_all = sum(1 for p in pair_details if p.is_self_interference)
+    mutual_interference_all = total_pairs - self_interference_all
+
+    # フィルタリング実行
+    total_roughness = sum(p.roughness_contribution for p in pair_details)
+    min_threshold = total_roughness * filter_threshold
+    filtered_pairs = [p for p in pair_details if p.roughness_contribution >= min_threshold]
+
+    # グラフの生成 (フィルタ済みデータを渡す)
+    fig = create_dissonance_curve_graph(filtered_pairs)
+
+    # フィルタリング後の統計
+    self_interference_filtered = sum(1 for p in filtered_pairs if p.is_self_interference)
+    mutual_interference_filtered = len(filtered_pairs) - self_interference_filtered
+
+    return DissonanceCurveViewModel(
+        fig=fig,
+        total_pairs=total_pairs,
+        displayed_pairs=len(filtered_pairs),
+        self_interference_all=self_interference_all,
+        self_interference_filtered=self_interference_filtered,
+        mutual_interference_all=mutual_interference_all,
+        mutual_interference_filtered=mutual_interference_filtered,
+    )

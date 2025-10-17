@@ -1,69 +1,52 @@
-"""ディソナンス曲線表示UIコンポーネント"""
+"""ディソナンス曲線表示UIコンポーネント (View層)
+
+このモジュールは、DissonanceCurveViewModelを受け取り、Streamlitで描画のみを行います。
+ビジネスロジックは src/visualization/dissonance_curve.py に配置されています。
+"""
 
 import streamlit as st
 
-from src.visualization.dissonance_curve import (
-    HarmonicPairData,
-    create_dissonance_curve_graph,
-)
+from src.visualization.dissonance_curve import DissonanceCurveViewModel
 
 
 def render_dissonance_curve_view(
-    pair_details: list[HarmonicPairData] | None,
+    view_model: DissonanceCurveViewModel | None,
 ) -> None:
-    """ディソナンス曲線グラフを表示します。
+    """ディソナンス曲線グラフを描画します。
 
     Args:
-        pair_details: 事前計算された倍音ペア詳細データ
-                     (calculate_consonance_with_details から取得)
+        view_model: Presenter層で準備されたDissonanceCurveViewModel
     """
-    if not pair_details:
+    if not view_model:
         st.info("データが不足しています。")
         return
 
-    # フィルタリング前の統計 (全ペアデータ)
-    total_pairs = len(pair_details)
-    self_interference_all = sum(1 for p in pair_details if p.is_self_interference)
-    mutual_interference_all = total_pairs - self_interference_all
-
-    # フィルタリング実行
-    total_roughness = sum(p.roughness_contribution for p in pair_details)
-    min_threshold = total_roughness * 0.001  # 0.1%閾値
-    filtered_pairs = [p for p in pair_details if p.roughness_contribution >= min_threshold]
-
-    # グラフの生成 (フィルタ済みデータを渡す)
-    fig = create_dissonance_curve_graph(filtered_pairs)
-
     # Streamlitでグラフを表示
-    st.plotly_chart(fig, use_container_width=True)
-
-    # フィルタリング後の統計
-    self_interference_filtered = sum(1 for p in filtered_pairs if p.is_self_interference)
-    mutual_interference_filtered = len(filtered_pairs) - self_interference_filtered
+    st.plotly_chart(view_model.fig, use_container_width=True)
 
     # 統計情報の表示
     col1, col2, col3, col4 = st.columns(4)
     with col1:
-        st.metric("Total Pairs (All)", total_pairs, help="全倍音ペア数")
+        st.metric("Total Pairs (All)", view_model.total_pairs, help="全倍音ペア数")
     with col2:
         st.metric(
             "Displayed Pairs",
-            len(filtered_pairs),
-            delta=f"-{total_pairs - len(filtered_pairs)}",
+            view_model.displayed_pairs,
+            delta=f"-{view_model.total_pairs - view_model.displayed_pairs}",
             help="フィルタリング後の表示ペア数",
         )
     with col3:
         st.metric(
             "Self (Displayed)",
-            self_interference_filtered,
-            delta=f"/ {self_interference_all}",
+            view_model.self_interference_filtered,
+            delta=f"/ {view_model.self_interference_all}",
             help="表示中の自己干渉ペア数",
         )
     with col4:
         st.metric(
             "Mutual (Displayed)",
-            mutual_interference_filtered,
-            delta=f"/ {mutual_interference_all}",
+            view_model.mutual_interference_filtered,
+            delta=f"/ {view_model.mutual_interference_all}",
             help="表示中の相互干渉ペア数",
         )
 

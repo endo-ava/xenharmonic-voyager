@@ -20,10 +20,13 @@ from config.constants import (
 )
 from config.styles import CUSTOM_CSS
 from src.calculator import calculate_consonance, calculate_consonance_with_details
+from src.visualization.analysis_presenter import prepare_analysis_view_model
+from src.visualization.dissonance_curve import prepare_dissonance_curve_view_model
+from src.visualization.history_presenter import prepare_history_view_model, record_observation
 from ui import render_sidebar, render_step_selector
 from ui.analysis_view import render_analysis_view
 from ui.dissonance_curve_view import render_dissonance_curve_view
-from ui.history_view import record_observation, render_history_view
+from ui.history_view import render_history_view
 from ui.step_selector import render_selection_status
 
 # ===== Page Configuration =====
@@ -102,21 +105,26 @@ if len(st.session_state[STATE_SELECTED_NOTES]) == num_notes:
         )
         current_roughness = result.total_roughness
 
-        # Render analysis results
-        render_analysis_view(current_roughness)
+        # Prepare ViewModels using Presenter layer
+        analysis_vm = prepare_analysis_view_model(current_roughness)
+        dissonance_vm = prepare_dissonance_curve_view_model(result.pair_details)
 
-        # Render dissonance curve visualization using pre-computed pair details
+        # Render analysis results
+        render_analysis_view(analysis_vm)
+
+        # Render dissonance curve visualization
         st.divider()
         with st.expander("Dissonance Curve Visualization", expanded=True):
-            render_dissonance_curve_view(pair_details=result.pair_details)
+            render_dissonance_curve_view(dissonance_vm)
 
-        # Record and render history
+        # Record observation and render history
         record_observation(
             st.session_state[STATE_EDO],
             st.session_state[STATE_SELECTED_NOTES],
             current_roughness,
         )
-        render_history_view()
+        history_vm = prepare_history_view_model()
+        render_history_view(history_vm)
 
     except ValidationError as e:
         st.error(f"Validation Error: {e}")

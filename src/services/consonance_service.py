@@ -19,7 +19,7 @@ from src.acoustics.roughness import (
 )
 from src.domain.harmonics import Harmonic, TimbreModel
 from src.domain.tuning import TuningSystem
-from ui.models import HarmonicPairData
+from src.visualization.models import HarmonicPairData
 
 
 @dataclass(frozen=True)
