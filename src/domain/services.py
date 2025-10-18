@@ -1,20 +1,15 @@
-"""ドメイン層と音響層を調整する協和性計算サービス。
+"""ドメイン層のサービス。
 
-このモジュールは、様々なチューニングシステムにおける和音の協和性スコアを
-計算するための高レベルサービスを提供します。以下の調整を行います:
-1. チューニングシステム(N-EDO周波数計算)
-2. 倍音系列生成(音色モデル)
-3. 音響的ラフネス計算(Setharesモデル)
-
-このサービスは、調整のみに焦点を当て、ドメインロジックを適切なレイヤーに
-委任することで、単一責任の原則に従います。
+このモジュールは、複数のドメインモデルを協調させるDomain Serviceを定義します。
+ConsonanceCalculatorは、協和度計算という複雑なドメインロジックを
+カプセル化するDomain Serviceです。
 """
 
 from dataclasses import dataclass
 
-from src.acoustics.roughness import calculate_roughness_pair
-from src.domain.harmonics import Harmonic, TimbreModel
-from src.domain.tuning import TuningSystem
+from src.domain.acoustics import calculate_roughness_pair
+from src.domain.models import Harmonic, TuningSystem
+from src.domain.protocols import TimbreModel
 from src.visualization.models import HarmonicPairData
 
 
@@ -40,7 +35,7 @@ class ConsonanceResult:
 
 
 class ConsonanceCalculator:
-    """N-EDOチューニングシステムにおける和音の協和性を計算するためのサービス。
+    """N-EDOチューニングシステムにおける和音の協和性を計算するDomain Service。
 
     このサービスは、協和性計算パイプライン全体を調整します:
     1. TuningSystemを介して和音ステップを周波数にマッピング
@@ -49,8 +44,7 @@ class ConsonanceCalculator:
     4. 集計された協和性メトリクスを返す
 
     Example:
-        >>> from src.domain.tuning import TuningSystem
-        >>> from src.domain.harmonics import SawtoothTimbre
+        >>> from src.domain.models import TuningSystem, SawtoothTimbre
         >>> calculator = ConsonanceCalculator(
         ...     tuning_system=TuningSystem(edo=12, base_frequency=440.0),
         ...     timbre_model=SawtoothTimbre(),

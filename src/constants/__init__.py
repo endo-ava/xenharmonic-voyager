@@ -6,8 +6,15 @@
 - ui: UI表示（Streamlitアプリケーション）
 """
 
-# ドメイン定数の再エクスポート
-from src.constants.domain import (
+# ドメイン定数の再エクスポート (新しい場所から)
+# UI定数の再エクスポート
+from src.constants.ui import (
+    ROUGHNESS_CONSONANT,
+    ROUGHNESS_EXTREMELY_CONSONANT,
+    ROUGHNESS_SLIGHTLY_CONSONANT,
+    ROUGHNESS_SLIGHTLY_DISSONANT,
+)
+from src.domain.constants import (
     CB_COEFFICIENT,
     CB_CONSTANT,
     DEFAULT_BASE_FREQUENCY,
@@ -17,14 +24,6 @@ from src.constants.domain import (
     ROUGHNESS_B1,
     ROUGHNESS_B2,
     SUPPORTED_EDO_SYSTEMS,
-)
-
-# UI定数の再エクスポート
-from src.constants.ui import (
-    ROUGHNESS_CONSONANT,
-    ROUGHNESS_EXTREMELY_CONSONANT,
-    ROUGHNESS_SLIGHTLY_CONSONANT,
-    ROUGHNESS_SLIGHTLY_DISSONANT,
 )
 
 __all__ = [

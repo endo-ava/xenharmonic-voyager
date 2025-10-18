@@ -18,8 +18,8 @@ import numpy as np
 import plotly.graph_objects as go
 from plotly.graph_objects import Figure
 
-from src.acoustics.roughness import calculate_dissonance_curve
-from src.constants import ROUGHNESS_B1, ROUGHNESS_B2
+from src.domain.acoustics import calculate_dissonance_curve
+from src.domain.constants import ROUGHNESS_B1, ROUGHNESS_B2
 from src.visualization.models import HarmonicPairData
 
 

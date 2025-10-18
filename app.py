@@ -19,7 +19,7 @@ from config.constants import (
     STATE_SELECTED_NOTES,
 )
 from config.styles import CUSTOM_CSS
-from src.calculator import calculate_consonance, calculate_consonance_with_details
+from src.application.use_cases import CalculateConsonanceUseCase
 from src.visualization.analysis_presenter import prepare_analysis_view_model
 from src.visualization.dissonance_curve import prepare_dissonance_curve_view_model
 from src.visualization.history_presenter import prepare_history_view_model, record_observation
@@ -68,16 +68,19 @@ def initialize_session_state() -> None:
 initialize_session_state()
 
 # Calculate reference scores at startup (once only)
+use_case = CalculateConsonanceUseCase()
 if st.session_state[STATE_REFERENCE_SCORE] is None:
-    st.session_state[STATE_REFERENCE_SCORE] = calculate_consonance(
+    result = use_case.execute(
         edo=12,
         notes=REF_CHORD_MAJOR_TRIAD,
     )
+    st.session_state[STATE_REFERENCE_SCORE] = result.total_roughness
 if st.session_state[STATE_MAX_SCORE] is None:
-    st.session_state[STATE_MAX_SCORE] = calculate_consonance(
+    result = use_case.execute(
         edo=12,
         notes=REF_CHORD_MINOR_SECOND,
     )
+    st.session_state[STATE_MAX_SCORE] = result.total_roughness
 
 # ===== Title and Description =====
 st.title("Xenharmonic Voyager")
@@ -99,9 +102,10 @@ render_selection_status(edo, st.session_state[STATE_SELECTED_NOTES])
 if len(st.session_state[STATE_SELECTED_NOTES]) == num_notes:
     try:
         # Calculate roughness with detailed pair data (single calculation)
-        result = calculate_consonance_with_details(
+        result = use_case.execute(
             edo=st.session_state[STATE_EDO],
             notes=st.session_state[STATE_SELECTED_NOTES],
+            include_pair_details=True,
         )
         current_roughness = result.total_roughness
 

@@ -10,45 +10,10 @@ References:
       bandwidth." Journal of the Acoustical Society of America, 38.
 """
 
-from dataclasses import dataclass
-
 import numpy as np
 
-from src.constants import CB_COEFFICIENT, CB_CONSTANT, ROUGHNESS_B1, ROUGHNESS_B2
-from src.domain.harmonics import Harmonic
-
-
-@dataclass(frozen=True)
-class RoughnessPairResult:
-    """2つの倍音間のラフネス計算の結果を保持するデータクラス。
-
-    このクラスは、ラフネス計算プロセスで得られる全ての中間値と最終結果を
-    カプセル化します。これにより、Service層での計算の重複を避けることができます。
-
-    Attributes:
-        roughness: 最終的なラフネス値（振幅積 × 不協和曲線値）
-        frequency_difference: 2つの周波数間の絶対差 (Hz)
-        critical_bandwidth: 使用された臨界帯域幅 (Hz)
-        normalized_freq_diff: 正規化された周波数差 (Δf / CB)
-        dissonance_value: 不協和曲線から得られた値 g(x)
-        amplitude_product: 2つの倍音の振幅の積
-
-    Examples:
-        >>> h1 = Harmonic(frequency=440.0, amplitude=1.0)
-        >>> h2 = Harmonic(frequency=880.0, amplitude=0.5)
-        >>> result = calculate_roughness_pair(h1, h2)
-        >>> result.roughness
-        0.0234...
-        >>> result.normalized_freq_diff
-        3.36...
-    """
-
-    roughness: float
-    frequency_difference: float
-    critical_bandwidth: float
-    normalized_freq_diff: float
-    dissonance_value: float
-    amplitude_product: float
+from src.domain.constants import CB_COEFFICIENT, CB_CONSTANT, ROUGHNESS_B1, ROUGHNESS_B2
+from src.domain.models import Harmonic, RoughnessPairResult
 
 
 def critical_bandwidth(frequency: float) -> float:
