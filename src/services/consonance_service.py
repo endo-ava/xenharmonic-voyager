@@ -161,7 +161,7 @@ class ConsonanceCalculator:
                 total_roughness += result.roughness
 
                 # 詳細データが必要な場合は生成
-                if include_pair_details and pair_details_list is not None:
+                if pair_details_list is not None:
                     pair_data = HarmonicPairData(
                         freq1=harmonic1.frequency,
                         freq2=harmonic2.frequency,
