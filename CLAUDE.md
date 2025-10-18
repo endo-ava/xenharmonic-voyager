@@ -69,6 +69,9 @@
     - `PascalCase`: クラス
     - `UPPER_SNAKE_CASE`: 定数
 - **Docstring**: [Google Python Style Guide](https://google.github.io/styleguide/pyguide.html#3.8-comments-and-docstrings) に準拠したdocstringを記述し、関数やクラスの目的、引数、戻り値を明確にします。
+- **括弧の使い方**:
+    - **コメント内**: 全角括弧は使用禁止。必ず「半角スペース + 半角括弧」を使用すること。
+    - **理由**: Ruffのルール`RUF003` (ambiguous character) に違反し、lintエラーとなるため。
 
 # Git & Pull Request 規約
 
