@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from src.domain.harmonics import Harmonic, HarmonicSeries, SawtoothTimbre
+from src.domain.models import Harmonic, HarmonicSeries, SawtoothTimbre
 
 
 class TestHarmonic:

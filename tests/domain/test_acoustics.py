@@ -2,13 +2,13 @@
 
 import pytest
 
-from src.acoustics.roughness import (
+from src.domain.acoustics import (
     calculate_dissonance_curve,
     calculate_roughness_pair,
     calculate_total_roughness,
     critical_bandwidth,
 )
-from src.domain.harmonics import Harmonic
+from src.domain.models import Harmonic
 
 
 class TestCriticalBandwidth:
