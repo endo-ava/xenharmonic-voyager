@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field, field_validator
 from src.constants import DEFAULT_BASE_FREQUENCY, DEFAULT_NUM_HARMONICS
 from src.domain.harmonics import SawtoothTimbre
 from src.domain.tuning import TuningSystem
-from src.services.consonance_service import ConsonanceCalculator
+from src.services.consonance_service import ConsonanceCalculator, ConsonanceResult
 
 
 class ChordInput(BaseModel):
@@ -100,3 +100,57 @@ def calculate_consonance(
     result = calculator.calculate_consonance(chord_steps=notes)
 
     return result.total_roughness
+
+
+def calculate_consonance_with_details(
+    edo: int,
+    notes: list[int],
+    base_frequency: float = DEFAULT_BASE_FREQUENCY,
+    num_harmonics: int = DEFAULT_NUM_HARMONICS,
+) -> ConsonanceResult:
+    """Setharesのラフネスモデルを使用して、和音の協和性スコアと詳細データを計算します。
+
+    `calculate_consonance` と同じですが、グラフ描画用の詳細なペアデータを含む
+    ConsonanceResultオブジェクトを返します。
+
+    Args:
+        edo: オクターブの等分割数(N-EDO)。0より大きい必要があります。
+        notes: EDOシステムにおける音符ステップインデックスのリスト。空はNG。
+               例: 12-EDOの長三和音の場合は [0, 4, 7]。
+        base_frequency: ステップ0の基本周波数(Hz)(デフォルト: A4 = 440 Hz)
+        num_harmonics: 各音符ごとに生成する倍音の数(デフォルト: 10)
+
+    Returns:
+        ConsonanceResult: 総ラフネス、メタデータ、グラフ用の詳細ペアデータを含む
+
+    Raises:
+        ValueError: 入力検証が失敗した場合(PydanticのChordInput経由)
+
+    Examples:
+        >>> # 詳細データ付きで計算
+        >>> result = calculate_consonance_with_details(edo=12, notes=[0, 7])
+        >>> result.total_roughness  # 総ラフネス
+        0.0834
+        >>> len(result.pair_details)  # ペア詳細データ
+        190
+        >>> result.pair_details[0].roughness_contribution  # 各ペアの寄与度
+        0.0027
+    """
+    # Pydanticを使用して入力を検証
+    ChordInput(edo=edo, notes=notes)
+
+    # このEDOのためのチューニングシステムを作成
+    tuning_system = TuningSystem(edo=edo, base_frequency=base_frequency)
+
+    # 音色モデルを作成(現在はSawtoothTimbreにハードコードされています)
+    timbre_model = SawtoothTimbre()
+
+    # 協和性計算機を作成
+    calculator = ConsonanceCalculator(
+        tuning_system=tuning_system,
+        timbre_model=timbre_model,
+        num_harmonics=num_harmonics,
+    )
+
+    # 協和性を計算し、詳細データを含むConsonanceResultを返す
+    return calculator.calculate_consonance(chord_steps=notes, include_pair_details=True)

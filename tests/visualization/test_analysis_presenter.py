@@ -1,9 +1,14 @@
-"""ui/analysis_view.pyの純粋関数のテスト"""
+"""src/visualization/analysis_presenter.py の純粋関数のテスト"""
 
 import pytest
 
 from config.constants import MAX_ROUGHNESS_FOR_PROGRESS, RoughnessLevel
-from ui.analysis_view import calculate_inverted_progress, get_roughness_level
+from src.visualization.analysis_presenter import (
+    AnalysisViewModel,
+    calculate_inverted_progress,
+    get_roughness_level,
+    prepare_analysis_view_model,
+)
 
 
 class TestGetRoughnessLevel:
@@ -128,3 +133,49 @@ class TestCalculateInvertedProgress:
         low_roughness_progress = calculate_inverted_progress(0.5)
         high_roughness_progress = calculate_inverted_progress(1.5)
         assert low_roughness_progress > high_roughness_progress
+
+
+class TestPrepareAnalysisViewModel:
+    """prepare_analysis_view_model関数のテスト"""
+
+    def test_creates_valid_view_model(self):
+        """有効なViewModelを作成する"""
+        vm = prepare_analysis_view_model(0.5)
+
+        assert isinstance(vm, AnalysisViewModel)
+        assert vm.roughness == 0.5
+        assert vm.roughness_level == "L2 (Consonant)"
+        assert 0.0 <= vm.inverted_progress <= 1.0
+
+    def test_very_consonant_case(self):
+        """非常に協和的なケース"""
+        vm = prepare_analysis_view_model(0.1)
+
+        assert vm.roughness == 0.1
+        assert vm.roughness_level == "L1 (Very Consonant)"
+        assert vm.inverted_progress > 0.9
+
+    def test_dissonant_case(self):
+        """不協和的なケース"""
+        vm = prepare_analysis_view_model(5.0)
+
+        assert vm.roughness == 5.0
+        assert vm.roughness_level == "L5 (Dissonant)"
+        assert vm.inverted_progress == 0.0
+
+    def test_view_model_is_immutable(self):
+        """ViewModelが不変であることを確認"""
+        vm = prepare_analysis_view_model(1.0)
+
+        # frozenデータクラスなので、属性変更は不可
+        with pytest.raises(AttributeError):
+            vm.roughness = 2.0  # type: ignore
+
+    def test_multiple_calls_consistent(self):
+        """同じ入力で同じ結果を返す（決定的）"""
+        vm1 = prepare_analysis_view_model(1.5)
+        vm2 = prepare_analysis_view_model(1.5)
+
+        assert vm1.roughness == vm2.roughness
+        assert vm1.roughness_level == vm2.roughness_level
+        assert vm1.inverted_progress == vm2.inverted_progress

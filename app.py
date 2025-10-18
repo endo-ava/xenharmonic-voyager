@@ -19,10 +19,14 @@ from config.constants import (
     STATE_SELECTED_NOTES,
 )
 from config.styles import CUSTOM_CSS
-from src.calculator import calculate_consonance
+from src.calculator import calculate_consonance, calculate_consonance_with_details
+from src.visualization.analysis_presenter import prepare_analysis_view_model
+from src.visualization.dissonance_curve import prepare_dissonance_curve_view_model
+from src.visualization.history_presenter import prepare_history_view_model, record_observation
 from ui import render_sidebar, render_step_selector
 from ui.analysis_view import render_analysis_view
-from ui.history_view import record_observation, render_history_view
+from ui.dissonance_curve_view import render_dissonance_curve_view
+from ui.history_view import render_history_view
 from ui.step_selector import render_selection_status
 
 # ===== Page Configuration =====
@@ -94,22 +98,33 @@ render_selection_status(edo, st.session_state[STATE_SELECTED_NOTES])
 # ===== Analysis and History =====
 if len(st.session_state[STATE_SELECTED_NOTES]) == num_notes:
     try:
-        # Calculate roughness
-        current_roughness = calculate_consonance(
+        # Calculate roughness with detailed pair data (single calculation)
+        result = calculate_consonance_with_details(
             edo=st.session_state[STATE_EDO],
             notes=st.session_state[STATE_SELECTED_NOTES],
         )
+        current_roughness = result.total_roughness
+
+        # Prepare ViewModels using Presenter layer
+        analysis_vm = prepare_analysis_view_model(current_roughness)
+        dissonance_vm = prepare_dissonance_curve_view_model(result.pair_details)
 
         # Render analysis results
-        render_analysis_view(current_roughness)
+        render_analysis_view(analysis_vm)
 
-        # Record and render history
+        # Render dissonance curve visualization
+        st.divider()
+        with st.expander("Dissonance Curve Visualization", expanded=True):
+            render_dissonance_curve_view(dissonance_vm)
+
+        # Record observation and render history
         record_observation(
             st.session_state[STATE_EDO],
             st.session_state[STATE_SELECTED_NOTES],
             current_roughness,
         )
-        render_history_view()
+        history_vm = prepare_history_view_model()
+        render_history_view(history_vm)
 
     except ValidationError as e:
         st.error(f"Validation Error: {e}")
@@ -209,6 +224,28 @@ with st.expander("About This Calculation"):
         $$
 
         **例**: 440 Hz (A4) のクリティカルバンド幅 = $0.24 \times 440 + 25 \approx 130.6$ Hz
+
+        #### 3.1 クリティカルバンドとラフネスの関係性
+
+        クリティカルバンドは単なる周波数の単位ではなく、**ラフネス (不協和感) の発生メカニズム**
+        に直接関係します。
+
+        2つの音の周波数差 $\Delta f$ とクリティカルバンド幅 $CB(f)$ の**比率**
+        (割り算 $\frac{\Delta f}{CB(f)}$ の値) によって、以下のようなラフネスの変化が生じます:
+
+        - **$\Delta f = 0$ (ユニゾン)**:
+          同じ周波数なので干渉なし → **ラフネス = 0** (完全協和)
+
+        - **$\Delta f \approx 0.25 \times CB(f)$ (クリティカルバンド内)**:
+          2つの音が同じクリティカルバンド内で神経レベルの干渉を起こす
+          → **ラフネス = 最大** (最大不協和)
+
+        - **$\Delta f \gg CB(f)$ (クリティカルバンドより十分離れた)**:
+          聴覚系が2つの音を別々に分解できる → **ラフネス → 0** (協和)
+
+        **重要な洞察**: ラフネスを決定するのは**絶対的な周波数差ではなく、クリティカルバンド幅
+        に対する相対的な周波数差**です。これが次節で登場する「正規化された周波数差」
+        $x = \frac{\Delta f}{CB(f)}$ の物理的意味です。
 
         ---
 

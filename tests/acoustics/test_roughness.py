@@ -138,92 +138,92 @@ class TestRoughnessPair:
         h1 = Harmonic(frequency=440.0, amplitude=1.0)
         h2 = Harmonic(frequency=440.0, amplitude=1.0)
 
-        roughness = calculate_roughness_pair(h1, h2)
+        result = calculate_roughness_pair(h1, h2)
 
-        assert roughness == pytest.approx(0.0, abs=1e-10)
+        assert result.roughness == pytest.approx(0.0, abs=1e-10)
 
     def test_octave_low_roughness(self):
         """オクターブ間隔は低いラフネスを持つ"""
         h1 = Harmonic(frequency=440.0, amplitude=1.0)
         h2 = Harmonic(frequency=880.0, amplitude=1.0)  # 完全オクターブ
 
-        roughness = calculate_roughness_pair(h1, h2)
+        result = calculate_roughness_pair(h1, h2)
 
         # オクターブは非常に低いラフネスを持つべき(大きな周波数分離)
-        assert roughness < 0.05  # 経験的しきい値
+        assert result.roughness < 0.05  # 経験的しきい値
 
     def test_minor_second_high_roughness(self):
         """短2度は高いラフネスを持つ"""
         h1 = Harmonic(frequency=440.0, amplitude=1.0)
         h2 = Harmonic(frequency=466.16, amplitude=1.0)  # 短2度(AからA#)
 
-        roughness_m2 = calculate_roughness_pair(h1, h2)
+        result_m2 = calculate_roughness_pair(h1, h2)
 
         # オクターブと比較
         h3 = Harmonic(frequency=880.0, amplitude=1.0)
-        roughness_octave = calculate_roughness_pair(h1, h3)
+        result_octave = calculate_roughness_pair(h1, h3)
 
         # 短2度はオクターブよりも大幅に多くのラフネスを持つべき
-        assert roughness_m2 > roughness_octave * 2
+        assert result_m2.roughness > result_octave.roughness * 2
 
     def test_amplitude_weighting(self):
         """ラフネスは振幅の積に比例"""
         h1 = Harmonic(frequency=440.0, amplitude=1.0)
         h2 = Harmonic(frequency=450.0, amplitude=1.0)
 
-        roughness_full = calculate_roughness_pair(h1, h2)
+        result_full = calculate_roughness_pair(h1, h2)
 
         # 第2倍音の半分の振幅
         h2_half = Harmonic(frequency=450.0, amplitude=0.5)
-        roughness_half = calculate_roughness_pair(h1, h2_half)
+        result_half = calculate_roughness_pair(h1, h2_half)
 
         # ラフネスは約半分になるはず
-        assert roughness_half == pytest.approx(roughness_full * 0.5, rel=1e-6)
+        assert result_half.roughness == pytest.approx(result_full.roughness * 0.5, rel=1e-6)
 
     def test_symmetry(self):
         """ラフネスは対称:R(h1, h2) = R(h2, h1)"""
         h1 = Harmonic(frequency=440.0, amplitude=1.0)
         h2 = Harmonic(frequency=554.37, amplitude=0.8)
 
-        roughness_12 = calculate_roughness_pair(h1, h2)
-        roughness_21 = calculate_roughness_pair(h2, h1)
+        result_12 = calculate_roughness_pair(h1, h2)
+        result_21 = calculate_roughness_pair(h2, h1)
 
-        assert roughness_12 == pytest.approx(roughness_21, rel=1e-9)
+        assert result_12.roughness == pytest.approx(result_21.roughness, rel=1e-9)
 
     def test_zero_amplitude_zero_roughness(self):
         """振幅0はラフネス0を生成"""
         h1 = Harmonic(frequency=440.0, amplitude=0.0)
         h2 = Harmonic(frequency=450.0, amplitude=1.0)
 
-        roughness = calculate_roughness_pair(h1, h2)
+        result = calculate_roughness_pair(h1, h2)
 
-        assert roughness == pytest.approx(0.0, abs=1e-10)
+        assert result.roughness == pytest.approx(0.0, abs=1e-10)
 
     def test_both_zero_amplitude(self):
         """両振幅0はラフネス0を生成"""
         h1 = Harmonic(frequency=440.0, amplitude=0.0)
         h2 = Harmonic(frequency=450.0, amplitude=0.0)
 
-        roughness = calculate_roughness_pair(h1, h2)
+        result = calculate_roughness_pair(h1, h2)
 
-        assert roughness == pytest.approx(0.0, abs=1e-10)
+        assert result.roughness == pytest.approx(0.0, abs=1e-10)
 
     def test_perfect_fifth_moderate_roughness(self):
         """完全5度は中程度のラフネスを持つ"""
         h1 = Harmonic(frequency=440.0, amplitude=1.0)
         h2 = Harmonic(frequency=659.25, amplitude=1.0)  # 完全5度
 
-        roughness_p5 = calculate_roughness_pair(h1, h2)
+        result_p5 = calculate_roughness_pair(h1, h2)
 
         # 完全5度:低いがゼロではないラフネス
         h_octave = Harmonic(frequency=880.0, amplitude=1.0)
-        roughness_octave = calculate_roughness_pair(h1, h_octave)
+        result_octave = calculate_roughness_pair(h1, h_octave)
 
         h_minor2 = Harmonic(frequency=466.16, amplitude=1.0)
-        roughness_minor2 = calculate_roughness_pair(h1, h_minor2)
+        result_minor2 = calculate_roughness_pair(h1, h_minor2)
 
         # 完全5度はオクターブと短2度の間にあるべき
-        assert roughness_octave < roughness_p5 < roughness_minor2
+        assert result_octave.roughness < result_p5.roughness < result_minor2.roughness
 
     def test_uses_lower_frequency_cb(self):
         """CB計算は2周波数のうち低い方を使用"""
@@ -231,12 +231,12 @@ class TestRoughnessPair:
         h_low = Harmonic(frequency=100.0, amplitude=1.0)
         h_high = Harmonic(frequency=200.0, amplitude=1.0)
 
-        roughness = calculate_roughness_pair(h_low, h_high)
+        result = calculate_roughness_pair(h_low, h_high)
 
         # 順序に関係なく同じであるべき(対称性)
-        roughness_reversed = calculate_roughness_pair(h_high, h_low)
+        result_reversed = calculate_roughness_pair(h_high, h_low)
 
-        assert roughness == pytest.approx(roughness_reversed, rel=1e-9)
+        assert result.roughness == pytest.approx(result_reversed.roughness, rel=1e-9)
 
 
 class TestTotalRoughness:
@@ -252,10 +252,10 @@ class TestTotalRoughness:
         h1 = Harmonic(frequency=440.0, amplitude=1.0)
         h2 = Harmonic(frequency=450.0, amplitude=1.0)
 
-        pair_roughness = calculate_roughness_pair(h1, h2)
+        result = calculate_roughness_pair(h1, h2)
         total_roughness = calculate_total_roughness([(h1, h2)])
 
-        assert total_roughness == pytest.approx(pair_roughness)
+        assert total_roughness == pytest.approx(result.roughness)
 
     def test_multiple_pairs_sum(self):
         """総ラフネスは個別ラフネスの合計"""
@@ -263,9 +263,9 @@ class TestTotalRoughness:
         h2 = Harmonic(frequency=450.0, amplitude=1.0)
         h3 = Harmonic(frequency=460.0, amplitude=1.0)
 
-        r12 = calculate_roughness_pair(h1, h2)
-        r13 = calculate_roughness_pair(h1, h3)
-        r23 = calculate_roughness_pair(h2, h3)
+        r12 = calculate_roughness_pair(h1, h2).roughness
+        r13 = calculate_roughness_pair(h1, h3).roughness
+        r23 = calculate_roughness_pair(h2, h3).roughness
 
         pairs = [(h1, h2), (h1, h3), (h2, h3)]
         total = calculate_total_roughness(pairs)
@@ -289,8 +289,8 @@ class TestTotalRoughness:
 
         # 合計は3つのペアのラフネスの合計であるべき
         assert total == pytest.approx(
-            calculate_roughness_pair(h1, h2)
-            + calculate_roughness_pair(h1, h3)
-            + calculate_roughness_pair(h2, h3),
+            calculate_roughness_pair(h1, h2).roughness
+            + calculate_roughness_pair(h1, h3).roughness
+            + calculate_roughness_pair(h2, h3).roughness,
             rel=1e-9,
         )

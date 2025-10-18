@@ -1,6 +1,7 @@
 """UI layer data models."""
 
 from dataclasses import dataclass
+from typing import Any
 
 
 @dataclass(frozen=True)
@@ -20,7 +21,7 @@ class Observation:
     notes: tuple[int, ...]
     roughness: float
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for backward compatibility with session state.
 
         Returns:
@@ -29,7 +30,7 @@ class Observation:
         return {"edo": self.edo, "notes": self.notes, "roughness": self.roughness}
 
     @classmethod
-    def from_dict(cls, data: dict) -> "Observation":
+    def from_dict(cls, data: dict[str, Any]) -> "Observation":
         """Create Observation from dictionary.
 
         Args:
