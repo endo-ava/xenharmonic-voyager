@@ -1,3 +1,4 @@
 numpy>=2.3.3
 pydantic>=2.11.10
 streamlit>=1.50.0
+plotly>=5.18.0
