@@ -7,82 +7,29 @@
 import streamlit as st
 from pydantic import ValidationError
 
-from config.constants import (
-    REF_CHORD_MAJOR_TRIAD,
-    REF_CHORD_MINOR_SECOND,
-    STATE_EDO,
-    STATE_MAX_SCORE,
-    STATE_NUM_NOTES,
-    STATE_OBSERVATION_HISTORY,
-    STATE_PINNED_OBSERVATIONS,
-    STATE_REFERENCE_SCORE,
-    STATE_SELECTED_NOTES,
-)
-from config.styles import CUSTOM_CSS
 from src.application.use_cases import CalculateConsonanceUseCase
 from src.visualization.analysis_presenter import prepare_analysis_view_model
 from src.visualization.dissonance_curve import prepare_dissonance_curve_view_model
-from src.visualization.history_presenter import prepare_history_view_model, record_observation
-from ui import render_sidebar, render_step_selector
+from src.visualization.history_presenter import prepare_history_view_model
 from ui.analysis_view import render_analysis_view
+from ui.config.constants import STATE_EDO, STATE_NUM_NOTES, STATE_SELECTED_NOTES
 from ui.dissonance_curve_view import render_dissonance_curve_view
+from ui.help_sections import render_about_calculation, render_calculation_parameters
 from ui.history_view import render_history_view
-from ui.step_selector import render_selection_status
-
-# ===== Page Configuration =====
-st.set_page_config(
-    page_title="Xenharmonic Voyager",
-    page_icon="🎵",
-    layout="wide",
+from ui.session_management import (
+    get_observations_from_session,
+    get_pinned_observations_from_session,
+    record_observation_to_session,
 )
+from ui.setup import initialize_session, setup_page
+from ui.sidebar import render_sidebar
+from ui.step_selector import render_selection_status, render_step_selector
 
-# ===== Custom CSS =====
-st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
+# ===== Setup & Initialize =====
+setup_page()
+initialize_session()
 
-
-# ===== Helper Functions =====
-def initialize_session_state() -> None:
-    """Initialize session state"""
-    defaults = {
-        STATE_EDO: 12,
-        STATE_NUM_NOTES: 3,
-        STATE_SELECTED_NOTES: [],
-        STATE_REFERENCE_SCORE: None,
-        STATE_MAX_SCORE: None,
-        STATE_OBSERVATION_HISTORY: [],
-        STATE_PINNED_OBSERVATIONS: [],
-    }
-    for key, value in defaults.items():
-        if key not in st.session_state:
-            st.session_state[key] = value
-
-    # Clear legacy dict-based observations (force reset)
-    if st.session_state[STATE_OBSERVATION_HISTORY] and any(
-        isinstance(obs, dict) for obs in st.session_state[STATE_OBSERVATION_HISTORY]
-    ):
-        st.session_state[STATE_OBSERVATION_HISTORY] = []
-        st.session_state[STATE_PINNED_OBSERVATIONS] = []
-
-
-# ===== Initialize =====
-initialize_session_state()
-
-# Calculate reference scores at startup (once only)
-use_case = CalculateConsonanceUseCase()
-if st.session_state[STATE_REFERENCE_SCORE] is None:
-    result = use_case.execute(
-        edo=12,
-        notes=REF_CHORD_MAJOR_TRIAD,
-    )
-    st.session_state[STATE_REFERENCE_SCORE] = result.total_roughness
-if st.session_state[STATE_MAX_SCORE] is None:
-    result = use_case.execute(
-        edo=12,
-        notes=REF_CHORD_MINOR_SECOND,
-    )
-    st.session_state[STATE_MAX_SCORE] = result.total_roughness
-
-# ===== Title and Description =====
+# ===== Header =====
 st.title("Xenharmonic Voyager")
 st.markdown(
     """
@@ -91,43 +38,43 @@ st.markdown(
     """
 )
 
-# ===== Sidebar: Parameters =====
+# ===== Controls =====
 edo, num_notes = render_sidebar()
-
-# ===== Main Area: Step Selection =====
 render_step_selector(edo, st.session_state[STATE_SELECTED_NOTES], num_notes)
 render_selection_status(edo, st.session_state[STATE_SELECTED_NOTES])
 
-# ===== Analysis and History =====
+# ===== Analysis =====
 if len(st.session_state[STATE_SELECTED_NOTES]) == num_notes:
     try:
-        # Calculate roughness with detailed pair data (single calculation)
+        # Calculate consonance
+        use_case = CalculateConsonanceUseCase()
         result = use_case.execute(
             edo=st.session_state[STATE_EDO],
             notes=st.session_state[STATE_SELECTED_NOTES],
             include_pair_details=True,
         )
-        current_roughness = result.total_roughness
 
-        # Prepare ViewModels using Presenter layer
-        analysis_vm = prepare_analysis_view_model(current_roughness)
+        # Prepare ViewModels
+        analysis_vm = prepare_analysis_view_model(result.total_roughness)
         dissonance_vm = prepare_dissonance_curve_view_model(result.pair_details)
 
         # Render analysis results
         render_analysis_view(analysis_vm)
 
-        # Render dissonance curve visualization
         st.divider()
         with st.expander("Dissonance Curve Visualization", expanded=True):
             render_dissonance_curve_view(dissonance_vm)
 
-        # Record observation and render history
-        record_observation(
+        # Record and render history
+        record_observation_to_session(
             st.session_state[STATE_EDO],
             st.session_state[STATE_SELECTED_NOTES],
-            current_roughness,
+            result.total_roughness,
         )
-        history_vm = prepare_history_view_model()
+        history_vm = prepare_history_view_model(
+            get_observations_from_session(),
+            get_pinned_observations_from_session(),
+        )
         render_history_view(history_vm)
 
     except ValidationError as e:
@@ -135,200 +82,16 @@ if len(st.session_state[STATE_SELECTED_NOTES]) == num_notes:
     except Exception as e:
         st.error(f"Calculation Error: {e}")
 
-# ===== Detail Information =====
+# ===== Help Sections =====
 st.divider()
+render_calculation_parameters(
+    st.session_state[STATE_EDO],
+    st.session_state[STATE_SELECTED_NOTES],
+    st.session_state[STATE_NUM_NOTES],
+)
+render_about_calculation()
 
-# Calculation Parameters
-with st.expander("Calculation Parameters", expanded=True):
-    selected_notes_display = (
-        st.session_state[STATE_SELECTED_NOTES] if st.session_state[STATE_SELECTED_NOTES] else "なし"
-    )
-    st.markdown(
-        f"""
-        **現在の計算パラメータ:**
-        - **音律システム**: {st.session_state[STATE_EDO]}-EDO
-        - **選択された音**: {selected_notes_display}
-        - **構成音数**: {st.session_state[STATE_NUM_NOTES]}音
-        - **使用モデル**: Sethares音響的ラフネスモデル (1993)
-        - **音色モデル**: ノコギリ波 (Sawtooth Wave, 倍音振幅 = 1/k)
-        - **考慮倍音数**: 第1~第10倍音
-        - **基本周波数**: 440 Hz (A4)
-        """
-    )
-
-# About This Calculation
-with st.expander("About This Calculation"):
-    st.markdown(
-        r"""
-        ## Setharesの音響的ラフネスモデル
-
-        このアプリケーションは、**Sethares (1993)** の音響的ラフネスモデルを使用して、
-        和音の協和性を物理的・客観的に計算します。
-
-        ---
-
-        ### 1. N-EDO音律理論
-
-        N-EDO (N-Equal Divisions of the Octave) は、オクターブをN個の等しい音程に分割する
-        音律システムです。
-
-        #### 周波数計算式
-
-        第 $n$ ステップの周波数 $f(n)$ は、基準周波数 $f_{\text{base}}$ から以下の式で
-        計算されます:
-
-        $$
-        f(n) = f_{\text{base}} \times 2^{n/N}
-        $$
-
-        - $f_{\text{base}} = 440$ Hz (A4)
-        - $N$: オクターブの分割数 (例: 12-EDO、19-EDOなど)
-        - $n$: ステップインデックス (0からN-1)
-
-        **例** (12-EDO、完全5度): $f(7) = 440 \times 2^{7/12} \approx 659.25$ Hz
-
-        ---
-
-        ### 2. 倍音列生成 (ノコギリ波モデル)
-
-        実際の楽器音は、基音だけでなく整数倍の周波数を持つ**倍音 (harmonics)** を含みます。
-        本アプリでは、ノコギリ波の音色モデルを採用しています。
-
-        #### 倍音の振幅減衰則
-
-        第 $k$ 倍音の周波数と振幅:
-
-        $$
-        f_k = k \times f_0, \quad a_k = \frac{1}{k} \quad (k = 1, 2, 3, \ldots, 10)
-        $$
-
-        | 倍音次数 | 周波数 | 振幅 |
-        |---------|--------|------|
-        | 1 | $f_0$ | 1.0 |
-        | 2 | $2f_0$ | 0.5 |
-        | 3 | $3f_0$ | 0.333 |
-        | 10 | $10f_0$ | 0.1 |
-
-        この**1/k減衰則**により、自然な音色の特性が再現されます。
-
-        ---
-
-        ### 3. クリティカルバンド幅理論
-
-        **クリティカルバンド幅 (Critical Bandwidth, CB)** は、聴覚系が周波数を分解できる
-        最小単位です。2つの音が同じクリティカルバンド内に存在すると、神経レベルで干渉し、
-        ラフネス (粗さ) として知覚されます。
-
-        #### Plomp & Levelの線形近似式
-
-        本実装では、計算効率と精度のバランスを考慮し、以下の線形近似式を使用しています:
-
-        $$
-        CB(f) = 0.24 \times f + 25 \text{ Hz}
-        $$
-
-        **例**: 440 Hz (A4) のクリティカルバンド幅 = $0.24 \times 440 + 25 \approx 130.6$ Hz
-
-        #### 3.1 クリティカルバンドとラフネスの関係性
-
-        クリティカルバンドは単なる周波数の単位ではなく、**ラフネス (不協和感) の発生メカニズム**
-        に直接関係します。
-
-        2つの音の周波数差 $\Delta f$ とクリティカルバンド幅 $CB(f)$ の**比率**
-        (割り算 $\frac{\Delta f}{CB(f)}$ の値) によって、以下のようなラフネスの変化が生じます:
-
-        - **$\Delta f = 0$ (ユニゾン)**:
-          同じ周波数なので干渉なし → **ラフネス = 0** (完全協和)
-
-        - **$\Delta f \approx 0.25 \times CB(f)$ (クリティカルバンド内)**:
-          2つの音が同じクリティカルバンド内で神経レベルの干渉を起こす
-          → **ラフネス = 最大** (最大不協和)
-
-        - **$\Delta f \gg CB(f)$ (クリティカルバンドより十分離れた)**:
-          聴覚系が2つの音を別々に分解できる → **ラフネス → 0** (協和)
-
-        **重要な洞察**: ラフネスを決定するのは**絶対的な周波数差ではなく、クリティカルバンド幅
-        に対する相対的な周波数差**です。これが次節で登場する「正規化された周波数差」
-        $x = \frac{\Delta f}{CB(f)}$ の物理的意味です。
-
-        ---
-
-        ### 4. ラフネス計算 (Setharesモデル)
-
-        #### 4.1 ディソナンス曲線
-
-        2つの純音間のディソナンス (不協和度) は、以下の曲線でモデル化されます:
-
-        $$
-        g(x) = e^{-3.5x} - e^{-5.75x}
-        $$
-
-        ここで、$x = \frac{\Delta f}{CB(f_{\min})}$ は正規化された周波数差です。
-
-        **曲線の特徴**:
-        - $x = 0$ (ユニゾン): ディソナンス = 0
-        - $x \approx 0.24$: 最大ディソナンス
-        - $x$ が大きい: ディソナンス → 0 (協和)
-
-        #### 4.2 ペアワイズラフネス
-
-        2つの倍音 $(f_1, a_1)$ と $(f_2, a_2)$ 間のラフネス:
-
-        $$
-        R(f_1, f_2, a_1, a_2) = a_1 \times a_2 \times g\left(
-        \frac{|f_2 - f_1|}{CB(\min(f_1, f_2))} \right)
-        $$
-
-        振幅積 $a_1 \times a_2$ により、両音の音量に応じてラフネスがスケールされます。
-
-        #### 4.3 総ラフネスの計算
-
-        和音の総ラフネス $R_{\text{total}}$ は、**すべての異なる倍音ペア**のラフネスの
-        総和です:
-
-        $$
-        R_{\text{total}} = \sum_{i=1}^{N \times M} \sum_{j=i+1}^{N \times M} R(f_i, f_j, a_i, a_j)
-        $$
-
-        - $N$: 和音の構成音数
-        - $M$: 各音の倍音数 (本実装では10)
-
-        **計算例** (3和音、10倍音):
-        - 総倍音数: $3 \times 10 = 30$
-        - ペア数: $\binom{30}{2} = 435$ ペア
-
-        ---
-
-        ### 5. 協和度の解釈
-
-        - **ラフネスが低い = 協和性が高い** (心地よく響く)
-        - **ラフネスが高い = 不協和性が高い** (濁った響き)
-
-        #### 代表的な音程の例 (12-EDO基準)
-
-        | 音程 | ステップ | 総ラフネス |
-        |------|---------|-----------|
-        | 完全5度 | [0, 7] | 0.083 |
-        | 長3度 | [0, 4] | 0.140 |
-        | 短3度 | [0, 3] | 0.190 |
-        | 短2度 | [0, 1] | 0.331 |
-
-        このモデルは、倍音の物理的干渉に基づき、なぜ完全五度が協和的で、
-        短2度が不協和なのかを定量的に説明します。
-
-        ---
-
-        ### 参考文献
-
-        - **Sethares, W. A. (1993).** "Local consonance and the relationship between
-          timbre and scale." *Journal of the Acoustical Society of America*, 94(3), 1218-1228.
-        - **Plomp, R., & Levelt, W. J. M. (1965).** "Tonal consonance and critical bandwidth."
-          *Journal of the Acoustical Society of America*, 38, 548-560.
-
-        """
-    )
-
-# Footer
+# ===== Footer =====
 st.divider()
 st.caption(
     """

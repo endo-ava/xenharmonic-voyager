@@ -2,13 +2,13 @@
 
 import pytest
 
-from config.constants import MAX_ROUGHNESS_FOR_PROGRESS, RoughnessLevel
 from src.visualization.analysis_presenter import (
     AnalysisViewModel,
     calculate_inverted_progress,
     get_roughness_level,
     prepare_analysis_view_model,
 )
+from ui.config.constants import MAX_ROUGHNESS_FOR_PROGRESS, RoughnessLevel
 
 
 class TestGetRoughnessLevel:

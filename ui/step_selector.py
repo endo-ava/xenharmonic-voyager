@@ -2,7 +2,7 @@
 
 import streamlit as st
 
-from config.constants import (
+from ui.config.constants import (
     OPTIMAL_COLS_THRESHOLD,
     SELECTION_COLORS,
     STATE_SELECTED_NOTES,
