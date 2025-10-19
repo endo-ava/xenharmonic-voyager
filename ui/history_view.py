@@ -6,12 +6,8 @@
 
 import streamlit as st
 
-from src.visualization.history_presenter import (
-    HistoryViewModel,
-    ObservationItemViewModel,
-    pin_observation,
-    unpin_observation,
-)
+from src.visualization.models import HistoryViewModel, ObservationItemViewModel
+from ui.session_management import pin_observation_in_session, unpin_observation_in_session
 
 
 def _render_observation_item(item: ObservationItemViewModel, key_suffix: str = "") -> None:
@@ -39,11 +35,11 @@ def _render_observation_item(item: ObservationItemViewModel, key_suffix: str = "
         if item.is_pinned:
             # 固定済み:解除ボタンを表示
             if st.button("📌🗑️", key=f"unpin{key_suffix}_{item.index}", help="Unpin"):
-                unpin_observation(item.index)
+                unpin_observation_in_session(item.index)
                 st.rerun()
         # 未固定:固定ボタンを表示
         elif st.button("📌", key=f"pin{key_suffix}_{item.index}", help="Pin"):
-            pin_observation(obs)
+            pin_observation_in_session(obs)
             st.rerun()
 
 

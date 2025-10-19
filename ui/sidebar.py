@@ -2,7 +2,7 @@
 
 import streamlit as st
 
-from config.constants import (
+from ui.config.constants import (
     DEFAULT_NUM_NOTES,
     EDO_OPTIONS,
     NUM_NOTES_OPTIONS,

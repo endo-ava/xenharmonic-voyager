@@ -6,7 +6,7 @@
 
 from dataclasses import dataclass
 
-from config.constants import MAX_ROUGHNESS_FOR_PROGRESS, RoughnessLevel
+from ui.config.constants import MAX_ROUGHNESS_FOR_PROGRESS, RoughnessLevel
 
 
 @dataclass(frozen=True)

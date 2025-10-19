@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from src.domain.tuning import TuningSystem
+from src.domain.models import TuningSystem
 
 
 class TestTuningSystemValidation:

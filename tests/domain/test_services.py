@@ -2,9 +2,8 @@
 
 import pytest
 
-from src.domain.harmonics import SawtoothTimbre
-from src.domain.tuning import TuningSystem
-from src.services.consonance_service import ConsonanceCalculator, ConsonanceResult
+from src.domain.models import SawtoothTimbre, TuningSystem
+from src.domain.services import ConsonanceCalculator, ConsonanceResult
 
 
 class TestConsonanceResult:

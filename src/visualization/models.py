@@ -7,6 +7,50 @@ from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
+class Observation:
+    """Immutable observation record for EDO analysis.
+
+    Represents a single observation of roughness calculation for a specific
+    EDO system and note combination.
+
+    Attributes:
+        edo: N-EDO (N Equal Divisions of the Octave) value
+        notes: Tuple of selected note indices
+        roughness: Calculated acoustic roughness value
+    """
+
+    edo: int
+    notes: tuple[int, ...]
+    roughness: float
+
+
+@dataclass(frozen=True)
+class ObservationItemViewModel:
+    """観測アイテムの表示用データモデル
+
+    Attributes:
+        obs: 観測データ
+        is_pinned: ピン留めされているか
+        index: 項目のインデックス (ピン留めまたは履歴内)
+    """
+
+    obs: Observation
+    is_pinned: bool
+    index: int
+
+
+@dataclass(frozen=True)
+class HistoryViewModel:
+    """履歴ビューの表示用データモデル
+
+    Attributes:
+        items: 表示する観測アイテムのリスト (ピン留め + 履歴)
+    """
+
+    items: list[ObservationItemViewModel]
+
+
+@dataclass(frozen=True)
 class HarmonicPairData:
     """倍音ペアの情報を格納するデータクラス
 

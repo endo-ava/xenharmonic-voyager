@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 from plotly.graph_objects import Figure
 
-from src.calculator import calculate_consonance_with_details
+from src.application.use_cases import CalculateConsonanceUseCase
 from src.visualization.dissonance_curve import (
     DissonanceCurveViewModel,
     create_dissonance_curve_graph,
@@ -75,7 +75,10 @@ class TestPrepareDissonanceCurveViewModel:
 
     def test_creates_valid_view_model(self):
         """有効なViewModelを作成することを確認"""
-        result = calculate_consonance_with_details(edo=12, notes=[0, 4, 7], num_harmonics=10)
+        use_case = CalculateConsonanceUseCase()
+        result = use_case.execute(
+            edo=12, notes=[0, 4, 7], num_harmonics=10, include_pair_details=True
+        )
 
         vm = prepare_dissonance_curve_view_model(result.pair_details)
 
@@ -88,7 +91,10 @@ class TestPrepareDissonanceCurveViewModel:
 
     def test_filtering_reduces_displayed_pairs(self):
         """フィルタリングにより表示ペア数が減少することを確認"""
-        result = calculate_consonance_with_details(edo=12, notes=[0, 4, 7], num_harmonics=10)
+        use_case = CalculateConsonanceUseCase()
+        result = use_case.execute(
+            edo=12, notes=[0, 4, 7], num_harmonics=10, include_pair_details=True
+        )
 
         # 閾値を高くすると表示ペア数が減る
         vm_low_threshold = prepare_dissonance_curve_view_model(
@@ -104,7 +110,10 @@ class TestPrepareDissonanceCurveViewModel:
 
     def test_statistics_are_consistent(self):
         """統計情報の一貫性を確認"""
-        result = calculate_consonance_with_details(edo=12, notes=[0, 4, 7], num_harmonics=10)
+        use_case = CalculateConsonanceUseCase()
+        result = use_case.execute(
+            edo=12, notes=[0, 4, 7], num_harmonics=10, include_pair_details=True
+        )
 
         vm = prepare_dissonance_curve_view_model(result.pair_details)
 
@@ -119,7 +128,10 @@ class TestPrepareDissonanceCurveViewModel:
 
     def test_view_model_is_immutable(self):
         """ViewModelが不変であることを確認"""
-        result = calculate_consonance_with_details(edo=12, notes=[0, 4, 7], num_harmonics=10)
+        use_case = CalculateConsonanceUseCase()
+        result = use_case.execute(
+            edo=12, notes=[0, 4, 7], num_harmonics=10, include_pair_details=True
+        )
 
         vm = prepare_dissonance_curve_view_model(result.pair_details)
 
@@ -134,7 +146,10 @@ class TestIntegration:
     def test_full_workflow_major_triad(self):
         """長三和音の完全なワークフローをテスト"""
         # 12-EDOの長三和音 [0, 4, 7]
-        result = calculate_consonance_with_details(edo=12, notes=[0, 4, 7], num_harmonics=10)
+        use_case = CalculateConsonanceUseCase()
+        result = use_case.execute(
+            edo=12, notes=[0, 4, 7], num_harmonics=10, include_pair_details=True
+        )
 
         assert result.pair_details is not None
         assert len(result.pair_details) == 435  # C(30, 2)
@@ -147,7 +162,8 @@ class TestIntegration:
     def test_full_workflow_minor_second(self):
         """短2度の完全なワークフローをテスト"""
         # 12-EDOの短2度 [0, 1]
-        result = calculate_consonance_with_details(edo=12, notes=[0, 1], num_harmonics=10)
+        use_case = CalculateConsonanceUseCase()
+        result = use_case.execute(edo=12, notes=[0, 1], num_harmonics=10, include_pair_details=True)
 
         assert result.pair_details is not None
         assert len(result.pair_details) == 190  # C(20, 2)
@@ -158,9 +174,10 @@ class TestIntegration:
 
     def test_different_edo_systems(self):
         """異なるEDOシステムでもテスト"""
+        use_case = CalculateConsonanceUseCase()
         for edo in [12, 19, 31]:
-            result = calculate_consonance_with_details(
-                edo=edo, notes=[0, edo // 2], num_harmonics=5
+            result = use_case.execute(
+                edo=edo, notes=[0, edo // 2], num_harmonics=5, include_pair_details=True
             )
 
             assert result.pair_details is not None

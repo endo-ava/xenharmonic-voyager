@@ -1,5 +1,6 @@
 """Xenharmonic Voyager - Core calculation modules."""
 
-from .calculator import ChordInput, calculate_consonance
+from .application.dto import ChordInput
+from .application.use_cases import CalculateConsonanceUseCase
 
-__all__ = ["ChordInput", "calculate_consonance"]
+__all__ = ["CalculateConsonanceUseCase", "ChordInput"]
